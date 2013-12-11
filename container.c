@@ -1,7 +1,7 @@
 #include"container.h"
 
 container_t* container_init(){
-  container_t *container = (container_t)malloc( sizeof(container_t));
+  container_t *container = (container_t*)malloc( sizeof(container_t) );
   container->blks[0] = malloc( CONTAINER_SIZE * sizeof(char) );
   memset( blks[0] , 0 , CONTAINER_SIZE); 
   uint32_t i;
@@ -28,7 +28,7 @@ uint32_t container_write( container_t *container, uint32_t new_id) {
   for( i = 0; i != CONTAINER_BLK_NUM; i++ ) {
     pwrite( li->fd, container->blk[i], BLK_SIZE, offset + i * BLK_SIZE);
   } 
-  return container_id + 1;  
+  return container_id;  
 }
 
 //read a container from disk 
