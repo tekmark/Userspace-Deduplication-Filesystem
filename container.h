@@ -1,7 +1,13 @@
 #ifndef CONTAINER_H_
 #define CONTAINER_H_
 
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<unistd.h>
+#include"global.h"
 #include"util.h"
+#include"lfs.h"
 
 #define BLK_SIZE 4096                             //block size is 4K
 #define SEG_SIZE BLK_SIZE                         //segment equals block size
@@ -22,14 +28,15 @@ typedef struct {
   fingerprint_seg_record_t records[CONTAINER_SEG_NUM]; 
 } container_header_t; 
 
-typedef struct {
+typedef struct container{
   container_header_t *header; 
   char *blks[CONTAINER_BLK_NUM];
   uint32_t offset; 
 } container_t; 
 
+//initialize a container
 container_t* container_init(); 
-void container_free(container_t); 
+void container_free(container_t *); 
 
 uint32_t container_write( container_t *container, uint32_t *new_id); 
 
@@ -39,5 +46,6 @@ void container_clean( uint32_t container_id, uint32_t *live_seg_vec,
                       uint32_t size); 
 
 uint32_t container_add_seg( container_t *container, char *seg_buf);
-uint32_t container_get_seg( container_t *container, char *seg_buf, uint32_t seg_offset); 
+uint32_t container_get_seg( container_t *container, uint32_t seg_offset, 
+                            char *seg_buf); 
 #endif

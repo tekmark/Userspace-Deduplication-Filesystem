@@ -1,26 +1,36 @@
 #include"lfs.h"
 
 static int lfs_getattr(const char *path, struct stat *stbuf){
+  printf("lfs_getattr: path: %s\n", path);
+  printf("lfs_getattr: inode num: %ld\n", (long)stbuf->st_ino);
+  printf("lfs_getattr: ownership uid=%ld, gid=%ld\n", (long)stbuf->st_uid, (long)stbuf->st_gid); 
+  printf("Last file modification:   %s", ctime(&(stbuf->st_mtime)));
+  return ; 
 }
 
-static int lsf_mkdir(const char *path, mode_t mode){
+static int lfs_mkdir(const char *path, mode_t mode){
 }
 
-static int lsf_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi){
 }
 
-static int lsf_open(const char *path, struct fuse_file_info *fi){
+static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
+  int retstat = 0;
+  
 }
 
-static int lsf_read(const char *path, char *buf, size_t size, off_t offset,
+static int lfs_open(const char *path, struct fuse_file_info *fi){
+}
+
+static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
                     struct fuse_file_info *fi){
 
 }
 
-static int lsf_write(const char *path, const char *buf, size_t size,
+static int lfs_write(const char *path, const char *buf, size_t size,
                      off_t offset, struct fuse_file_info *fi){
-  
+ /* 
   uint32_t recipe_seg_index = offset/SEG_SIZE;
   uint32_t align = SEG_SIZE - offset%SEG_SIZE;
   uint32_t seg_cnt = size/SEG_SIZE;
@@ -46,11 +56,11 @@ static int lsf_write(const char *path, const char *buf, size_t size,
       recipe_seg_index++; 
     } else {
     }   
-  }  
+  }*/  
 }
 
 int lfs_create(const char *path, mode_t mode,struct fuse_file_info *fi){
-  
+   
 }
 
 
@@ -74,12 +84,16 @@ void lfs_init() {
   lfs_info->imap = (inode_map_t*)malloc(sizeof(inode_map_t));
   lfs_info->n_inode = 0; 
   
-
-  lfs_info->cur_metadata_container=container_init(); 
-  lfs_info->cur_data_container=container_init(); 
-  lfs_info->cur_filerecipe_container=container_init();
+  
+  lfs_info->cur_metadata_container = container_init(); 
+  lfs_info->cur_inode_container = container_init(); 
+  lfs_info->cur_filerecipe_container = container_init();
+  lfs_info->cur_dir_data_container = container_init(); 
+  
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);
+  
+  
   
   //create a file of required size on disk that needs to be used to represent the
   //log structured filey system
@@ -92,7 +106,6 @@ void lfs_init() {
 
 
 int main ( int  argc, char *argv[] ) {
-  lfs_init(); 
-  
+  lfs_init();  
   return fuse_main( argc, argv, &lfs_oper, NULL); 
 }

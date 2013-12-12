@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-g -Wall -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 LFLAGS=-lfuse -lcrypto
-SOURCE=lfs.c util.c
+SOURCE=lfs.c util.c inode.c container.c
 OBJECTS=$(SOURCE:.c=.o)
 EXECUTABLE=lfs
 
@@ -12,5 +12,5 @@ $(EXECUTABLE): $(OBJECTS)
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
 clean:
-	rm -rf *.o $(EXECUTABLE)
+	rm -rf *.o $(EXECUTABLE) lfslog
 

@@ -11,17 +11,9 @@
 #include"uthash.h"
 #include"util.h"
 #include"inode.h"
-#include"container.h"
-
-#define BLK_SIZE 4096                             //block size is 4K
-#define SEG_SIZE BLK_SIZE                         //segment equals block size
-#define CONTAINER_BLK_NUM 8                       //8 blocks per container
-#define CONTAINER SEG_NUM CONTAINER_BLK_NUM-1     //1st block is for container 
-                                                  //header
-#define CONTAINER_SIZE BLK_SIZE*CONTAINER_BLK_NUM //
-
+#include"global.h"
+/*
 #define MAX_FILENAME_LEN 256
-#define MAX_CONTAINER_NUM 1024         
 
 
 typedef struct {
@@ -46,7 +38,7 @@ typedef struct {
 } lfs_global_info_t; 
 
 lfs_global_info_t *lfs_info; 
-
+*/
 void lfs_init(); 
 
 #endif
