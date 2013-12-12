@@ -25,12 +25,13 @@ typedef struct {
 
 typedef struct {
   uint32_t container_id;
+  uint32_t container_type; 
   fingerprint_seg_record_t records[CONTAINER_SEG_NUM]; 
 } container_header_t; 
 
 typedef struct container{
   container_header_t *header; 
-  char *blks[CONTAINER_BLK_NUM];
+  char *buf;
   uint32_t offset; 
 } container_t; 
 

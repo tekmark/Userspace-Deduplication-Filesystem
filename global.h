@@ -29,6 +29,7 @@ typedef struct {
   container_t *cur_filerecipe_container;
   container_t *cur_dir_data_container;
   
+  uint32_t cur_container_id;  
   inode_t *cur_inode; 
    
   uint32_t fd;

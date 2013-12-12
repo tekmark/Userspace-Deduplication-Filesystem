@@ -3,13 +3,10 @@
 
 container_t* container_init(){
   container_t *container = (container_t*)malloc( sizeof(container_t) );
-  container->blks[0] = malloc( CONTAINER_SIZE * sizeof(char) );
-  memset( container->blks[0] , 0 , CONTAINER_SIZE); 
-  uint32_t i;
-  for( i = 1; i != CONTAINER_BLK_NUM; i++) {
-    container->blks[i] = container->blks[0] + i * BLK_SIZE;
-  }
-  container->header = (container_header_t*)container->blks[0];
+  container->buf = malloc( CONTAINER_SIZE * sizeof(char) );
+  memset( container->buf , 0 , CONTAINER_SIZE);
+  
+  container->header = (container_header_t*)container->buf;
   container->offset = sizeof(container_header_t);  //container is full
   return container; 
 } 
@@ -25,18 +22,14 @@ void container_free(container_t *container){
 uint32_t container_write( container_t *container, uint32_t *new_id) {
   uint32_t container_id = container->header->container_id;
   uint32_t offset = container_id * CONTAINER_SIZE + BLK_SIZE;  
-  uint32_t i = 0; 
-  for( i = 0; i != CONTAINER_BLK_NUM; i++ ) {
-    pwrite( lfs_info->fd, container->blks[i], BLK_SIZE, offset + i * BLK_SIZE);
-  } 
+  pwrite( lfs_info->fd, container->buf, CONTAINER_SIZE, offset);
   return container_id;  
 }
 
 //read a container from disk 
-uint32_t container_read(container_t *container, uint32_t container_id) {
-  
+uint32_t container_read(container_t *container, uint32_t container_id) {  
   uint32_t offset = container_id * CONTAINER_SIZE + BLK_SIZE; 
-  pread(lfs_info->fd, container->blks[0], CONTAINER_SIZE, offset);
+  pread(lfs_info->fd, container->buf, CONTAINER_SIZE, offset);
   container->offset = CONTAINER_SIZE;  //container is full
   return 0; 
 }
@@ -52,7 +45,7 @@ uint32_t container_add_seg( container_t *container, char *seg_buf) {
     printf("cannot add seg to container because no available seg\n");
     return -1;                           
   } else {
-    container->blks[seg_num] = seg_buf;
+    memcpy( container->buf + seg_num * SEG_SIZE, seg_buf, SEG_SIZE); 
     printf("seg is added to container with seg_no %u\n", seg_num); 
     return  0; 
   }
@@ -67,8 +60,8 @@ uint32_t container_get_seg( container_t *container, uint32_t seg_offset,
     return -1; 
   }
   else {
-    printf("get seg %u from container successfully\n", seg_offset); 
-    seg_buf = container->blks[seg_offset];
+    printf("get seg %u from container successfully\n", seg_offset);
+    memcpy(seg_buf, container->buf + seg_offset*SEG_SIZE, SEG_SIZE); 
     return 0;  
   }
     

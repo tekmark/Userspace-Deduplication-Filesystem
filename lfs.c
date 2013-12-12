@@ -18,6 +18,7 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   int retstat = 0;
   
+   
 }
 
 static int lfs_open(const char *path, struct fuse_file_info *fi){
@@ -59,9 +60,6 @@ static int lfs_write(const char *path, const char *buf, size_t size,
   }*/  
 }
 
-int lfs_create(const char *path, mode_t mode,struct fuse_file_info *fi){
-   
-}
 
 
 static struct fuse_operations lfs_oper = {
@@ -85,10 +83,17 @@ void lfs_init() {
   lfs_info->n_inode = 0; 
   
   
-  lfs_info->cur_metadata_container = container_init(); 
+  lfs_info->cur_data_container = container_init();
+  cur_data_container->header->container_type = DATA;
+
   lfs_info->cur_inode_container = container_init(); 
+  cur_inode_container->header->container_type = METADATA;
+ 
   lfs_info->cur_filerecipe_container = container_init();
+  cur_filerecipe_container->header->conatiner_type = METADATA; 
+
   lfs_info->cur_dir_data_container = container_init(); 
+  cur_dir_data_container->header->container_type = METADATA; 
   
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);
@@ -100,7 +105,14 @@ void lfs_init() {
   uint32_t file_size = MAX_CONTAINER_NUM * CONTAINER_BLK_NUM * BLK_SIZE + BLK_SIZE;
   char *buf = malloc(file_size);
   memset((void*) buf, 0, file_size);
-  pwrite(lfs_info->fd, buf, file_size, 0); 
+  pwrite(lfs_info->fd, buf, file_size, 0);
+  //add dir / to file system
+  //first build the inode;
+  inode_t *root_inode = malloc(sizeof( inode_t )); 
+  root_inode->inode_id = 0;
+    
+  cur_inode_container->
+  
   free(buf); 
 }
 
