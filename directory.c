@@ -1,7 +1,7 @@
 #include "directory.h"
 
 inode_t * dir_get_inode(char *path){
-   
+  //use path to find the target inode
 }
 
 
@@ -68,6 +68,19 @@ dir_t *open_cur_dir(){
 dir_t *open_parent_dir(){
 }
 
+
+uint32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
+  uint32_t origin_num = *dir->num;
+  //check existence first
+  strcpy(dir_records[origin_num].filename, filename);
+  dir_records[origin_num].inode_id = inode_id;
+  *dir->num++;  
+}
+
+uint32_t dir_remove_entry( dir_t *dir, const char* filename) {
+  uint32_t origin_num = *dir->num;
+  //check existence first, if exist delete it add move all entries after it. if not show does't exist. 
+}
 /*
 dir_t *open_dir( const char * path) {
   if( !strcmp( path, "/") ) {
