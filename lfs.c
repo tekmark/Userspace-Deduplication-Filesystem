@@ -84,16 +84,16 @@ void lfs_init() {
   
   
   lfs_info->cur_data_container = container_init();
-  cur_data_container->header->container_type = DATA;
+  lfs_info->cur_data_container->header->container_type = DATA;
 
   lfs_info->cur_inode_container = container_init(); 
-  cur_inode_container->header->container_type = METADATA;
+  lfs_info->cur_inode_container->header->container_type = METADATA;
  
   lfs_info->cur_filerecipe_container = container_init();
-  cur_filerecipe_container->header->conatiner_type = METADATA; 
+  lfs_info->cur_filerecipe_container->header->conatiner_type = METADATA; 
 
   lfs_info->cur_dir_data_container = container_init(); 
-  cur_dir_data_container->header->container_type = METADATA; 
+  lfs_info->cur_dir_data_container->header->container_type = METADATA; 
   
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);

@@ -6,6 +6,7 @@
 
 #define RECIPE_NUM 8
 #define MAX_INODE_NUM 2048
+#define DIRECT_BLK_NUM 12
 
 enum {
   REGULAR_FILE = 1,
@@ -20,12 +21,14 @@ typedef struct {
 
 typedef struct {
   uint32_t inode_id;
+  uint32_t inode_type; 
   uint32_t file_size;        //maximum file size is 4gb
   uint32_t owner;            //uid of owner
   uint32_t mode;             //rwx, file or directory 
   time_t ctime;              //inode change time
   time_t mtime;              //file content last modification time
   time_t atime;              //file content last access time
+  uint32_t direct_blk[DIRECT_BLK_NUM]; 
   uint32_t file_recipe;      //position of file recipe
   indirect_blk_t recipe_blk; 
 } inode_t; 

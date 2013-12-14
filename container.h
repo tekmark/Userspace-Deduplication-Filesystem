@@ -18,6 +18,9 @@
 
 #define MAX_CONTAINER_NUM 1024      //disk size is 1024 * 4K * 8 + 4K      
 
+#define DATA 0
+#define METADATA 1
+
 typedef struct {
   fingerprint_t fp;
   uint32_t seg; 
