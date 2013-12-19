@@ -5,6 +5,8 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   printf("lfs_getattr: inode num: %ld\n", (long)stbuf->st_ino);
   printf("lfs_getattr: ownership uid=%ld, gid=%ld\n", (long)stbuf->st_uid, (long)stbuf->st_gid); 
   printf("Last file modification:   %s", ctime(&(stbuf->st_mtime)));
+<<<<<<< HEAD
+=======
   
   int res = 0;
   
@@ -28,6 +30,7 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   }
 
   
+>>>>>>> chao
   return 0; 
 }
 
@@ -49,7 +52,7 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   uint32_t i = 0; 
   //fill all files in current dir
   for( i = 0; i != dir->num; i++) {
-    filler(buf, dir->records[i].filename, NULL, 0);
+    filler(buf, dir->records[i], NULL, 0);
   } 
    
   return 0; 
@@ -128,9 +131,9 @@ void lfs_init() {
   lfs_info->n_inode = 0; 
   
   lfs_info->cur_container = container_init();
-  lfs_info->cur_container->header->container_id = 0; 
+  
   lfs_info->buf_container = container_init();
-    
+  buf_container->container_id = 0;  
   
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);
@@ -158,12 +161,18 @@ void lfs_init() {
   dir_add_entry( root_dir, "./", root_inode->inode_id);  //for root, they are both itself
   
   root_inode->direct_blk[0] = BLK_SIZE + 2 * SEG_SIZE;          //header is 0, inode is the 1 
+<<<<<<< HEAD
+  container_add_seg( lfs_info->buf_container, (char*)root_inode );
+  container_add_seg( lfs_info->buf_container, (char*)root_dir->records);
+   
+=======
   container_add_seg( lfs_info->cur_container, (char*)root_inode );
   container_add_seg( lfs_info->cur_container, (char*)root_dir->records);
   
   container_copy( lfs_info->buf_container, lfs_info->cur_container ); 
   
   lfs_info->cur_inode = root_inode;    
+>>>>>>> chao
 }
 
 

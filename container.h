@@ -39,7 +39,9 @@ typedef struct container{
 } container_t; 
 
 //initialize a container
-container_t* container_init(); 
+container_t* container_init();
+uint32_t container_copy(container_t * dst_container, 
+                    container_t * src_container); 
 void container_free(container_t *); 
 
 uint32_t container_write( container_t *container, uint32_t *new_id); 
