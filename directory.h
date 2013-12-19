@@ -20,7 +20,7 @@ typedef struct {
   dir_record_t *records; // records
 } dir_t; 
 
-uint32_t dir_get_inode(char *path, inode_t * inode);
+uint32_t dir_get_inode(const char *path, inode_t * inode);
 dir_t * open_root_dir();
 dir_t *open_cur_dir();
 dir_t *open_parent_dir();
