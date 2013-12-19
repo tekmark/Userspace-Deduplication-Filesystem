@@ -17,6 +17,12 @@ void container_free(container_t *container){
   } 
 }
 
+uint32_t container_copy(conatiner_t *dst_container, container_t *src_container){
+  dst_container->id = src_container->id;
+  dst_container->offset = src_container->offset; 
+  memcpy( dst_container->buf, src_container->buf, CONTAINER_SIZE);
+  return 0;   
+}; 
 
 //write container into disk 
 uint32_t container_write( container_t *container, uint32_t *new_id) {

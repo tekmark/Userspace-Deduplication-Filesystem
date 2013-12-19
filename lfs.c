@@ -5,7 +5,30 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   printf("lfs_getattr: inode num: %ld\n", (long)stbuf->st_ino);
   printf("lfs_getattr: ownership uid=%ld, gid=%ld\n", (long)stbuf->st_uid, (long)stbuf->st_gid); 
   printf("Last file modification:   %s", ctime(&(stbuf->st_mtime)));
-  return ; 
+  
+  int res = 0;
+  
+  memset( stbuf, 0, sizeof(struct stat) );
+  
+  if( strcmp(path, "/") == 0 ){          //if path is root
+    printf("lfs_getattr: path is / \n"); 
+    stbuf->st_mode = S_IFDIR | 0755; 
+    stbuf->st_nlink = 2;
+    res = 0;
+    return res;
+  } else {
+    printf("lfs_getattr: path is %s \n", path);
+    dir_t *dir = open_cur_dir(); 
+    uint32_t i = 0; 
+    for( i = 0; i != dir->num; i++) {
+      
+      
+    }
+    return 0; 
+  }
+
+  
+  return 0; 
 }
 
 static int lfs_mkdir(const char *path, mode_t mode){
@@ -14,11 +37,27 @@ static int lfs_mkdir(const char *path, mode_t mode){
 
 static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi){
+  (void) offset;
+  (void) fi;
+  //struct file_inode_hash *s;
+
+  if (strcmp(path, "/") != 0) {
+     return -1;
+  }
+  
+  dir_t *dir = open_cur_dir();
+  uint32_t i = 0; 
+  //fill all files in current dir
+  for( i = 0; i != dir->num; i++) {
+    filler(buf, dir->records[i], NULL, 0);
+  } 
+   
   return 0; 
 }
 
 static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   int retstat = 0;
+  
   
   return 0; 
 }
@@ -88,8 +127,9 @@ void lfs_init() {
   lfs_info->n_inode = 0; 
   
   lfs_info->cur_container = container_init();
-
-  lfs_info->buf_container = container_init(); 
+  
+  lfs_info->buf_container = container_init();
+  buf_container->container_id = 0;  
   
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);
@@ -104,22 +144,25 @@ void lfs_init() {
   free(buf); 
 
   //add dir / to file system
-  //first build the inode;
+  //first build the root inode;
   inode_t *root_inode = malloc(sizeof( inode_t ));
-  root_inode->inode_id = 0;
-  root_inode->inode_type = DIRECTORY;
+  root_inode->inode_id = 0;                    //for root inode, inode_id = 0
+  root_inode->inode_type = DIRECTORY;          //inode_type = DIRECTORY
   
-  dir_t *root_dir = malloc( sizeof(dir_t) );
+  dir_t *root_dir = malloc( sizeof(dir_t) );   //build directory struct for the root inode
   
   //root_dir->num = 2; 
-  root_dir->records = malloc( 2 * sizeof(dir_record_t)); 
-  dir_add_entry( root_dir, "../", root_inode->inode_id); 
-  dir_add_entry( root_dir, "./", root_inode->inode_id);
+  root_dir->records = malloc( 2 * sizeof(dir_record_t));  
+  dir_add_entry( root_dir, "../", root_inode->inode_id); //add current and parent directory
+  dir_add_entry( root_dir, "./", root_inode->inode_id);  //for root, they are both itself
   
   root_inode->direct_blk[0] = BLK_SIZE + 2 * SEG_SIZE;          //header is 0, inode is the 1 
-  container_add_seg( buf_container, (char*)root_inode );
-  container_add_seg( buf_container, (char*)root_dir->records);
-   
+  container_add_seg( lfs_info->cur_container, (char*)root_inode );
+  container_add_seg( lfs_info->cur_container, (char*)root_dir->records);
+  
+  container_copy( lfs_info->buf_container, lfs_info->cur_container ); 
+  
+  lfs_info->cur_inode = root_inode;    
 }
 
 
