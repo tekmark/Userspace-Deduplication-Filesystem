@@ -13,7 +13,7 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   if( strcmp(path, "/") == 0 ){          //if path is root
     printf("lfs_getattr: path is / \n");
     //stbuf->st_uid = 1000; 
-    stbuf->st_mode = S_IFDIR | 0755; 
+    stbuf->st_mode = S_IFDIR | 0777; 
     stbuf->st_nlink = 2;
     res = 0;
     return res;
@@ -166,6 +166,7 @@ void lfs_init() {
   inode_t *root_inode = malloc(sizeof( inode_t ));
   root_inode->inode_id = 0;                    //for root inode, inode_id = 0
   root_inode->inode_type = DIRECTORY;          //inode_type = DIRECTORY
+  root_inode->file_size = 0x1000; 
   lfs_info->n_inode++; 
   lfs_info->imap->records[0].inode_id = root_inode->inode_id;
   lfs_info->imap->records[0].inode_addr = BLK_SIZE;  
@@ -176,14 +177,17 @@ void lfs_init() {
   dir_add_entry( root_dir, "../", root_inode->inode_id); //add current and parent directory
   dir_add_entry( root_dir, "./", root_inode->inode_id);  //for root, they are both itself
   
-  root_inode->direct_blk[0] = BLK_SIZE + 2 * SEG_SIZE;          //header is 0, inode is the 1 
+  root_inode->direct_blk[0] = BLK_SIZE + 2 * BLK_SIZE;          //header is 0, inode is the 1 
+  printf("init: root_inode->direct_blk[0] %x\n", root_inode->direct_blk[0]); 
   container_add_seg( lfs_info->cur_container, (char*)root_inode );
   container_add_seg( lfs_info->cur_container, (char*)root_dir->records);
   
   container_copy( lfs_info->buf_container, lfs_info->cur_container ); 
   
   lfs_info->cur_inode = root_inode; 
-  printf("lfs_init: current inode id is %u\n", lfs_info->cur_inode->inode_id); 
+  printf("lfs_init: current inode id is %u\n", lfs_info->cur_inode->inode_id);
+  print_inodemap(lfs_info->imap);
+  printf("lfs_init: current_container_id %u\n", lfs_info->cur_container->header->container_id); 
 }
 
 

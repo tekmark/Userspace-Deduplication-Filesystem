@@ -69,26 +69,33 @@ dir_t *open_cur_dir(){
     uint32_t seg_offset;
     if (lfs_info->cur_inode == NULL)  {
         // obtain current directory inode from disk
+      printf("open_cur_dir: cur_inode == NULL\n");
+      return NULL; 
     }
 
     // Assume we already know the inode of current directory
-    inode_t *cur_dir_inode = lfs_info->cur_inode;
+    //inode_t *cur_dir_inode = lfs_info->cur_inode;
     dir_t * ret_dir = malloc (sizeof(dir_t)); 
     
     // get file recipe
     // find segments from file recipe, and put into a buffer
     uint32_t blk_num = get_division_result (
-        cur_dir_inode->file_size, BLK_SIZE);
+        lfs_info->cur_inode->file_size, BLK_SIZE);
+    printf("open_cur_dir: block_num result: %u\n", blk_num); 
     uint32_t dir_data_addr, i;
     char * dir_data_buf = malloc (BLK_SIZE * blk_num);
     for (i = 0; i < blk_num; i++) {
         //? fetch the address from direct block
         //  or fetch from file receipe 
-	dir_data_addr = cur_dir_inode->direct_blk[i];
-        uint32_t cid = dir_data_addr / CONTAINER_SIZE;
+	dir_data_addr = lfs_info->cur_inode->direct_blk[i];
+        printf("open_cur_dir: direct_blk#%u, addr:%x\n",i, dir_data_addr); 
+        int32_t cid = 0; // (int32_t)dir_data_addr/(int32_t)CONTAINER_SIZE;
+        printf("open_cur_dir: container_size = %x\n", CONTAINER_SIZE);
         seg_offset = dir_data_addr % CONTAINER_SIZE / BLK_SIZE;
+        printf("open_cur_dir: container_id: %u, segment_offset %u\n", cid, seg_offset); 
         if (cid != lfs_info->cur_container->header->container_id)  {
 	   container_read (lfs_info->cur_container, cid);
+           printf("open_cur_dir: container is not in mem, load it to mem\n"); 
         }
         memcpy (dir_data_buf + i * BLK_SIZE, 
             lfs_info->cur_container->buf + seg_offset * BLK_SIZE, BLK_SIZE);
@@ -102,6 +109,7 @@ dir_t *open_cur_dir(){
         }
     }
     ret_dir->num = cnt;
+    printf("open_cur_dir: ret container's has %u entries\n", cnt); 
     return ret_dir;
 }
 
