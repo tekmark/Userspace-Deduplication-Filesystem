@@ -1,24 +1,26 @@
 #include"lfs.h"
 
 static int lfs_getattr(const char *path, struct stat *stbuf){
-  printf("lfs_getattr: path: %s\n", path);
+  /*printf("lfs_getattr: path: %s\n", path);
   printf("lfs_getattr: inode num: %ld\n", (long)stbuf->st_ino);
   printf("lfs_getattr: ownership uid=%ld, gid=%ld\n", (long)stbuf->st_uid, (long)stbuf->st_gid); 
   printf("Last file modification:   %s", ctime(&(stbuf->st_mtime)));
-  
+  */
   int res = 0;
   
   memset( stbuf, 0, sizeof(struct stat) );
   
   if( strcmp(path, "/") == 0 ){          //if path is root
-    printf("lfs_getattr: path is / \n"); 
+    printf("lfs_getattr: path is / \n");
+    //stbuf->st_uid = 1000; 
     stbuf->st_mode = S_IFDIR | 0755; 
     stbuf->st_nlink = 2;
     res = 0;
     return res;
   } else {
     printf("lfs_getattr: path is %s \n", path);
-    dir_t *dir = open_cur_dir(); 
+    dir_t *dir = open_cur_dir();
+    printf("dir records[0]: %s", dir->records[0].filename); 
     uint32_t i = 0; 
     for( i = 0; i != dir->num; i++) {
       
