@@ -106,6 +106,7 @@ static int lfs_write(const char *path, const char *buf, size_t size,
 
 
 
+
 static struct fuse_operations lfs_oper = {
     .getattr    = lfs_getattr,
     .mkdir      = lfs_mkdir,
