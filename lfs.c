@@ -59,7 +59,22 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   int retstat = 0;
-  
+  printf("lfs_create: debug****************************************\n");  
+  inode_t temp_ino;
+  uint32_t ret = 0;
+  if( !dir_get_inode( path, &temp_ino ) ) {
+    printf("lfs_create: inode exists!\n"); 
+  } else {
+    inode_t *new_inode = (inode_t*)(lfs_info->cur_container->buf + lfs_info->cur_container->offset );
+    printf("lfs_create: current container offset %u \n", lfs_info->cur_container->offset);
+    lfs_info->imap->records[lfs_info->n_inode++].inode_id = lfs_info->n_inode; 
+    new_inode->inode_id = lfs_info->n_inode;
+    //new_inode->inode_addr = lfs_info->cur_container->offset; 
+    printf("lfs_create: create inode with id: %u \n",
+             new_inode->inode_id); 
+    new_inode->inode_type = REGULAR_FILE; 
+    
+  }
   
   return 0; 
 }
@@ -151,7 +166,9 @@ void lfs_init() {
   inode_t *root_inode = malloc(sizeof( inode_t ));
   root_inode->inode_id = 0;                    //for root inode, inode_id = 0
   root_inode->inode_type = DIRECTORY;          //inode_type = DIRECTORY
-  
+  lfs_info->n_inode++; 
+  lfs_info->imap->records[0].inode_id = root_inode->inode_id;
+  lfs_info->imap->records[0].inode_addr = BLK_SIZE;  
   dir_t *root_dir = malloc( sizeof(dir_t) );   //build directory struct for the root inode
   
   //root_dir->num = 2; 
@@ -165,7 +182,8 @@ void lfs_init() {
   
   container_copy( lfs_info->buf_container, lfs_info->cur_container ); 
   
-  lfs_info->cur_inode = root_inode;    
+  lfs_info->cur_inode = root_inode; 
+  printf("lfs_init: current inode id is %u\n", lfs_info->cur_inode->inode_id); 
 }
 
 

@@ -1,10 +1,10 @@
 #include "directory.h"
 #include "global.h"
 
-uint32_t dir_get_inode(char *path, inode_t * inode){
+uint32_t dir_get_inode(const char *path, inode_t * inode){
     //use path to find the target inode
     dir_t * cur_dir = open_cur_dir();
-    uint32_t inode_id;
+    uint32_t inode_id = 0;
     uint32_t ret;
     ret = get_inode_id_from_filename (path, cur_dir, &inode_id);
     if (ret == FAIL) {
