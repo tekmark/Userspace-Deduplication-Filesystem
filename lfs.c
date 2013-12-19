@@ -9,29 +9,32 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
 }
 
 static int lfs_mkdir(const char *path, mode_t mode){
+  return 0; 
 }
 
 static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi){
+  return 0; 
 }
 
 static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   int retstat = 0;
   
-   
+  return 0; 
 }
 
 static int lfs_open(const char *path, struct fuse_file_info *fi){
+  return 0; 
 }
 
 static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
                     struct fuse_file_info *fi){
-
+  return 0; 
 }
 
 static int lfs_write(const char *path, const char *buf, size_t size,
                      off_t offset, struct fuse_file_info *fi){
- /* 
+/*  
   uint32_t recipe_seg_index = offset/SEG_SIZE;
   uint32_t align = SEG_SIZE - offset%SEG_SIZE;
   uint32_t seg_cnt = size/SEG_SIZE;
@@ -57,7 +60,9 @@ static int lfs_write(const char *path, const char *buf, size_t size,
       recipe_seg_index++; 
     } else {
     }   
-  }*/  
+  }
+*/ 
+  return 0; 
 }
 
 
@@ -82,38 +87,39 @@ void lfs_init() {
   lfs_info->imap = (inode_map_t*)malloc(sizeof(inode_map_t));
   lfs_info->n_inode = 0; 
   
-  
-  lfs_info->cur_data_container = container_init();
-  lfs_info->cur_data_container->header->container_type = DATA;
+  lfs_info->cur_container = container_init();
 
-  lfs_info->cur_inode_container = container_init(); 
-  lfs_info->cur_inode_container->header->container_type = METADATA;
- 
-  lfs_info->cur_filerecipe_container = container_init();
-  lfs_info->cur_filerecipe_container->header->conatiner_type = METADATA; 
-
-  lfs_info->cur_dir_data_container = container_init(); 
-  lfs_info->cur_dir_data_container->header->container_type = METADATA; 
+  lfs_info->buf_container = container_init(); 
   
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);
   
-  
-  
+ 
   //create a file of required size on disk that needs to be used to represent the
   //log structured filey system
   uint32_t file_size = MAX_CONTAINER_NUM * CONTAINER_BLK_NUM * BLK_SIZE + BLK_SIZE;
   char *buf = malloc(file_size);
   memset((void*) buf, 0, file_size);
   pwrite(lfs_info->fd, buf, file_size, 0);
+  free(buf); 
+
   //add dir / to file system
   //first build the inode;
-  inode_t *root_inode = malloc(sizeof( inode_t )); 
+  inode_t *root_inode = malloc(sizeof( inode_t ));
   root_inode->inode_id = 0;
-    
-  cur_inode_container->
+  root_inode->inode_type = DIRECTORY;
   
-  free(buf); 
+  dir_t *root_dir = malloc( sizeof(dir_t) );
+  
+  //root_dir->num = 2; 
+  root_dir->records = malloc( 2 * sizeof(dir_record_t)); 
+  dir_add_entry( root_dir, "../", root_inode->inode_id); 
+  dir_add_entry( root_dir, "./", root_inode->inode_id);
+  
+  root_inode->direct_blk[0] = BLK_SIZE + 2 * SEG_SIZE;          //header is 0, inode is the 1 
+  container_add_seg( buf_container, (char*)root_inode );
+  container_add_seg( buf_container, (char*)root_dir->records);
+   
 }
 
 

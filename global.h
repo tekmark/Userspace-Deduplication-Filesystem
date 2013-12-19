@@ -24,15 +24,14 @@ typedef struct {
 
   namespace_record_t *lfs_namespace;
 
-  container_t *cur_inode_container;
-  container_t *cur_data_container;
-  container_t *cur_filerecipe_container;
-  container_t *cur_dir_data_container;
+  container_t *cur_container;
+  container_t *buf_container; 
   
   uint32_t cur_container_id;  
   inode_t *cur_inode; 
    
   uint32_t fd;
+
 } lfs_global_info_t;
 
 lfs_global_info_t *lfs_info;

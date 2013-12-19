@@ -2,34 +2,34 @@
 #define DIRECTORY__H
 
 #include <stdint.h>
+#include "util.h"
 
 #define MAX_FILENAME_LENGTH 256
 
 #define SUCCESS 0
 #define FAIL    -1
 
-typedef struct {                      //260bytes per entry, 4096/260 = 15
+typedef struct {                          //260bytes per entry, 4096/260 = 15
   char filename[MAX_FILENAME_LENGTH];     //255 + 1
-  uint32_t inode_id;                  //4 byte; 
+  uint32_t inode_id;                      //4 byte; 
 } dir_record_t; 
 
+// structure to hold directory data
 typedef struct {
-  uint32_t num; 
-  dir_record_t *records; 
+  uint32_t num;          // number of records
+  dir_record_t *records; // records
 } dir_t; 
 
-// public method: get inode id by the path of a file
-// Todo: disambiguate the path is a directory path or file path
-int dir_get_inode_id(dir_t *dir, char *filename, uint32_t *inode_id);
+uint32_t dir_get_inode(char *path, inode_t * inode);
+dir_t * open_root_dir();
+dir_t *open_cur_dir();
+dir_t *open_parent_dir();
 
-// obtain path of parent folder
-char* get_parentpath(const char *path);
+uint32_t dir_add_entry(dir_t *dir, const char* filename, uint32_t inode_id);
+uint32_t dir_remove_entry(dir_t *dir, const char* filename);
 
-// obtain the map from by using the path
-int get_name_inodenum_map (char *path, struct dirmap_entry_t[] *map);
-
-// obtain inode id from the map, if not exist return -1, succeed return 0
-int get_inodeid_from_map (char *fname, struct dirmap_entry_t[] *map, 
-	uint32_t size, uint32_t *pinode_id);
+uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
+    uint32_t *pinode_id);
+inode_t * get_inode_from_inode_id (uint32_t inode_id);
 
 #endif
