@@ -65,12 +65,6 @@ dir_t * open_root_dir() {
   return ret_dir; 
 }
 
-uint32_t get_division_result(uint32_t file_size, uint32_t blk_size)
-{
-    return 0;
-}
-
-
 dir_t *open_cur_dir(){
     uint32_t seg_offset;
     if (lfs_info->cur_inode == NULL)  {
