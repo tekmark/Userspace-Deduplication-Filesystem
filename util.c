@@ -17,3 +17,12 @@ char* get_filename(const char *path) {
         p++;
         return p;
 }
+
+
+uint32_t get_division_result (uint32_t dividend, uint32_t divisor) {
+    uint32_t result = dividend / divisor;
+    if (dividend % divisor != 0) {
+        result++;
+    }
+    return result;
+}
