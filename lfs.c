@@ -171,9 +171,9 @@ void lfs_init() {
   lfs_info->imap->records[0].inode_id = root_inode->inode_id;
   lfs_info->imap->records[0].inode_addr = BLK_SIZE;  
   dir_t *root_dir = malloc( sizeof(dir_t) );   //build directory struct for the root inode
-  
+  root_dir->num = 0; 
   //root_dir->num = 2; 
-  root_dir->records = malloc( 2 * sizeof(dir_record_t));  
+  root_dir->records = malloc( 20 * sizeof(dir_record_t));  
   dir_add_entry( root_dir, "../", root_inode->inode_id); //add current and parent directory
   dir_add_entry( root_dir, "./", root_inode->inode_id);  //for root, they are both itself
   

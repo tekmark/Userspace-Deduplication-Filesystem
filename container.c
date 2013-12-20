@@ -52,7 +52,8 @@ uint32_t container_add_seg( container_t *container, char *seg_buf) {
     return -1;                           
   } else {
     memcpy( container->buf + seg_num * SEG_SIZE, seg_buf, SEG_SIZE); 
-    printf("seg is added to container with seg_no %u\n", seg_num); 
+    printf("seg is added to container with seg_no %u\n", seg_num);
+    container->offset += BLK_SIZE;
     return  0; 
   }
   

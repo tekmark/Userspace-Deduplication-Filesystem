@@ -91,7 +91,7 @@ dir_t *open_cur_dir(){
         printf("open_cur_dir: direct_blk#%u, addr:%x\n",i, dir_data_addr); 
         int32_t cid = 0; // (int32_t)dir_data_addr/(int32_t)CONTAINER_SIZE;
         printf("open_cur_dir: container_size = %x\n", CONTAINER_SIZE);
-        seg_offset = dir_data_addr % CONTAINER_SIZE / BLK_SIZE;
+        seg_offset = 2; //dir_data_addr % CONTAINER_SIZE / BLK_SIZE;
         printf("open_cur_dir: container_id: %u, segment_offset %u\n", cid, seg_offset); 
         if (cid != lfs_info->cur_container->header->container_id)  {
 	   container_read (lfs_info->cur_container, cid);
@@ -102,14 +102,15 @@ dir_t *open_cur_dir(){
     }
     // create a structure holding the directory
     ret_dir->records = (dir_record_t *)dir_data_buf;
-    int cnt;
+    int cnt =0;
     for (i = 0; i < blk_num * BLK_SIZE / sizeof(dir_record_t); i++) {
 	if (strlen(ret_dir->records[i].filename) >0) {
+            printf("filename %s\n", ret_dir->records[i].filename); 
 	    cnt++;
         }
     }
     ret_dir->num = cnt;
-    printf("open_cur_dir: ret container's has %u entries\n", cnt); 
+    printf("open_cur_dir: ret dir's has %u entries\n", cnt); 
     return ret_dir;
 }
 
@@ -136,7 +137,8 @@ uint32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
     uint32_t entry_num = dir->num;
     strcpy(dir->records[entry_num].filename, filename);
     dir->records[entry_num].inode_id = inode_id;
-    dir->num++; 
+    dir->num++;
+    printf("entry is added successfully, entry#%u\n", dir->num);  
     return flag;
 }
 
