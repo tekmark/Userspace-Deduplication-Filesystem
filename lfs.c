@@ -9,9 +9,9 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   int res = 0;
   
   memset( stbuf, 0, sizeof(struct stat) );
-  
+  printf ("lfs_getAttr: path: %s\n", path);
   if( strcmp(path, "/") == 0 ){          //if path is root
-    printf("lfs_getattr: path is / \n");
+    printf("lfs_getattr: path is root \n");
     //stbuf->st_uid = 1000; 
     stbuf->st_mode = S_IFDIR | 0777; 
     stbuf->st_nlink = 2;
@@ -19,32 +19,39 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
     return res;
   } else {
     printf("lfs_getattr: path is %s \n", path);
+    printf("lfs_getattr: filename is %s\n", get_filename(path)); 
     dir_t *dir = open_cur_dir();
-    printf("dir records[0]: %s", dir->records[0].filename); 
+    printf("dir records[0]: %s\n", dir->records[0].filename); 
     uint32_t i = 0; 
     for( i = 0; i != dir->num; i++) {
-      
-      
-    }
-    return 0; 
+      if(!strcmp (get_filename(path), dir->records[i].filename)  ) {
+        printf("existing entry in dir, filename is %s\n", get_filename(path));
+        stbuf->st_mode = S_IFREG | 0777; 
+        stbuf->st_nlink = 1;
+        return 0; 
+      }
+    } 
   }
-
-  
-  return 0; 
+  res = -ENOENT; 
+  printf("-ENOENT = %u \n", -ENOENT); 
+  return res; 
 }
 
 static int lfs_mkdir(const char *path, mode_t mode){
+  printf("lfs_mkdir: enter \n"); 
+  
   return 0; 
 }
 
 static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi){
+  printf("lfs_readdir: enter\n"); 
   (void) offset;
   (void) fi;
   //struct file_inode_hash *s;
 
   if (strcmp(path, "/") != 0) {
-     return -1;
+     return -ENOENT;
   }
   
   dir_t *dir = open_cur_dir();
@@ -52,7 +59,8 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   //fill all files in current dir
   for( i = 0; i != dir->num; i++) {
     filler(buf, dir->records[i].filename, NULL, 0);
-  } 
+    printf("lfs_readdir: fill %s to dir\n", dir->records[i].filename); 
+  }
    
   return 0; 
 }
@@ -80,6 +88,8 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
 }
 
 static int lfs_open(const char *path, struct fuse_file_info *fi){
+  printf("lfs_open: enter\n"); 
+  
   return 0; 
 }
 

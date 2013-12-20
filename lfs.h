@@ -7,6 +7,7 @@
 #include<stdlib.h>
 #include<assert.h>
 #include<fuse.h>
+#include<errno.h>
 #include<sys/types.h>
 #include"uthash.h"
 #include"util.h"
