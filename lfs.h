@@ -12,6 +12,7 @@
 #include"util.h"
 #include"inode.h"
 #include"global.h"
+#include"directory.h"
 /*
 #define MAX_FILENAME_LEN 256
 

@@ -5,7 +5,7 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   printf("lfs_getattr: inode num: %ld\n", (long)stbuf->st_ino);
   printf("lfs_getattr: ownership uid=%ld, gid=%ld\n", (long)stbuf->st_uid, (long)stbuf->st_gid); 
   printf("Last file modification:   %s", ctime(&(stbuf->st_mtime)));
-  return ; 
+  return 0; 
 }
 
 static int lfs_mkdir(const char *path, mode_t mode){
@@ -117,8 +117,8 @@ void lfs_init() {
   dir_add_entry( root_dir, "./", root_inode->inode_id);
   
   root_inode->direct_blk[0] = BLK_SIZE + 2 * SEG_SIZE;          //header is 0, inode is the 1 
-  container_add_seg( buf_container, (char*)root_inode );
-  container_add_seg( buf_container, (char*)root_dir->records);
+  container_add_seg( lfs_info->buf_container, (char*)root_inode );
+  container_add_seg( lfs_info->buf_container, (char*)root_dir->records);
    
 }
 
