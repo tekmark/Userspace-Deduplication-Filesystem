@@ -29,6 +29,7 @@ uint32_t get_division_result(uint32_t file_size, uint32_t blk_size);
 
 uint32_t dir_add_entry(dir_t *dir, const char* filename, uint32_t inode_id);
 uint32_t dir_remove_entry(dir_t *dir, const char* filename);
+void print_dir_data(dir_t *dir); 
 
 uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
     uint32_t *pinode_id);

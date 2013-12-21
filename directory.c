@@ -54,6 +54,7 @@ dir_t * open_root_dir() {
     }
     memcpy(dir_data_buf + i * BLK_SIZE, lfs_info->cur_container->buf + seg_offset, BLK_SIZE); 
   }
+  print_dir_data(ret_dir); 
   ret_dir->records = (dir_record_t*)dir_data_buf;
   int cnt;
   for(i = 0; i != blk_num * BLK_SIZE/sizeof(dir_record_t); i++) {
@@ -87,10 +88,11 @@ dir_t *open_cur_dir(){
     for (i = 0; i < blk_num; i++) {
         //? fetch the address from direct block
         //  or fetch from file receipe 
+	uint32_t container_size=CONTAINER_SIZE;
 	dir_data_addr = lfs_info->cur_inode->direct_blk[i];
         printf("open_cur_dir: direct_blk#%u, addr:%x\n",i, dir_data_addr); 
-        int32_t cid = 0; // (int32_t)dir_data_addr/(int32_t)CONTAINER_SIZE;
-        printf("open_cur_dir: container_size = %x\n", CONTAINER_SIZE);
+        uint32_t cid = dir_data_addr/container_size;
+        printf("open_cur_dir: container_size = %u\n", container_size);
         seg_offset = 2; //dir_data_addr % CONTAINER_SIZE / BLK_SIZE;
         printf("open_cur_dir: container_id: %u, segment_offset %u\n", cid, seg_offset); 
         if (cid != lfs_info->cur_container->header->container_id)  {
@@ -111,6 +113,7 @@ dir_t *open_cur_dir(){
     }
     ret_dir->num = cnt;
     printf("open_cur_dir: ret dir's has %u entries\n", cnt); 
+    print_dir_data(ret_dir); 
     return ret_dir;
 }
 
@@ -136,9 +139,11 @@ uint32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
 
     uint32_t entry_num = dir->num;
     strcpy(dir->records[entry_num].filename, filename);
+    printf("dir_add_entry: added entry %s\n", dir->records[entry_num].filename); 
     dir->records[entry_num].inode_id = inode_id;
     dir->num++;
-    printf("entry is added successfully, entry#%u\n", dir->num);  
+    printf("entry is added successfully, entry#%u\n", dir->num);
+    print_dir_data(dir); 
     return flag;
 }
 
@@ -247,4 +252,16 @@ inode_t * get_inode_from_inode_id (uint32_t inode_id) {
         sizeof(inode_t));
     inode = (inode_t *)inode_buf;
     return inode;
+}
+
+void print_dir_data (dir_t * dir) {
+    uint32_t index;
+    for (index = 0; index < 5; index++) {
+       // if (strlen(dir->records[index].filename) > 0) {
+            printf ("dir_print: filename: %s, inode_id: %u\n", 
+                dir->records[index].filename,
+                dir->records[index].inode_id);
+       // }
+    }
+
 }

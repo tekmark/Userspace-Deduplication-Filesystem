@@ -7,7 +7,7 @@ container_t* container_init(){
   memset( container->buf , 0 , CONTAINER_SIZE);
   
   container->header = (container_header_t*)container->buf;
-  container->offset = sizeof(container_header_t);  //container is full
+  container->offset = BLK_SIZE; //sizeof(container_header_t);  //container is full
   return container; 
 } 
 
@@ -46,18 +46,18 @@ void container_clean( uint32_t container_id, uint32_t *live_seg,
 }
 
 uint32_t container_add_seg( container_t *container, char *seg_buf) {
-  uint32_t seg_num = container->offset/SEG_SIZE + 1;  //+1 because next seg
+  uint32_t seg_num = container->offset/SEG_SIZE;  //+1 because next seg
+  printf("container_add_seg: container_offset %u, target seg_num%u\n",
+           container->offset, seg_num); 
   if ( seg_num > CONTAINER_SEG_NUM ) {
     printf("cannot add seg to container because no available seg\n");
     return -1;                           
   } else {
-    memcpy( container->buf + seg_num * SEG_SIZE, seg_buf, SEG_SIZE); 
     printf("seg is added to container with seg_no %u\n", seg_num);
+    memcpy( container->buf + seg_num * SEG_SIZE, seg_buf, SEG_SIZE); 
     container->offset += BLK_SIZE;
     return  0; 
   }
-  
-  
 }
 
 uint32_t container_get_seg( container_t *container, uint32_t seg_offset, 

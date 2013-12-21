@@ -33,7 +33,7 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
     } 
   }
   res = -ENOENT; 
-  printf("-ENOENT = %u \n", -ENOENT); 
+  printf("ENOENT = %u \n", ENOENT); 
   return res; 
 }
 
@@ -73,15 +73,26 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   if( !dir_get_inode( path, &temp_ino ) ) {
     printf("lfs_create: inode exists!\n"); 
   } else {
-    inode_t *new_inode = (inode_t*)(lfs_info->cur_container->buf + lfs_info->cur_container->offset );
-    printf("lfs_create: current container offset %u \n", lfs_info->cur_container->offset);
+    //inode_t *new_inode = (inode_t*)(lfs_info->cur_container->buf + lfs_info->cur_container->offset );
+    inode_t *new_inode = (inode_t*)malloc(BLK_SIZE); 
+    printf("lfs_create: current container offset %x \n", lfs_info->cur_container->offset);
     lfs_info->imap->records[lfs_info->n_inode++].inode_id = lfs_info->n_inode; 
     new_inode->inode_id = lfs_info->n_inode;
+    lfs_info->n_inode++; 
     //new_inode->inode_addr = lfs_info->cur_container->offset; 
     printf("lfs_create: create inode with id: %u \n",
              new_inode->inode_id); 
-    new_inode->inode_type = REGULAR_FILE; 
-    
+    new_inode->inode_type = REGULAR_FILE;
+    lfs_info->imap->records[1].inode_id = new_inode->inode_id;
+    lfs_info->imap->records[1].inode_addr = lfs_info->cur_container->offset;
+    container_add_seg( lfs_info->cur_container, (char*)new_inode);
+    print_inodemap(lfs_info->imap);
+    dir_t *cur_dir = open_cur_dir();
+    dir_add_entry( cur_dir, get_filename(path), new_inode->inode_id );
+    lfs_info->cur_inode->direct_blk[0] = lfs_info->cur_container->offset;    
+    container_add_seg( lfs_info->cur_container, (char*)cur_dir->records );
+    container_add_seg( lfs_info->cur_container, (char*)lfs_info->cur_inode);
+    lfs_info->imap->records[0].inode_addr = lfs_info->cur_container->      
   }
   
   return 0; 
@@ -141,6 +152,7 @@ static struct fuse_operations lfs_oper = {
     .open       = lfs_open,
     .read       = lfs_read,
     .write      = lfs_write,
+    .create     = lfs_create,
 };
 
 
@@ -174,7 +186,7 @@ void lfs_init() {
   //add dir / to file system
   //first build the root inode;
   inode_t *root_inode = malloc(sizeof( inode_t ));
-  root_inode->inode_id = 0;                    //for root inode, inode_id = 0
+  root_inode->inode_id = 1;                    //for root inode, inode_id = 0
   root_inode->inode_type = DIRECTORY;          //inode_type = DIRECTORY
   root_inode->file_size = 0x1000; 
   lfs_info->n_inode++; 
