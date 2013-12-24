@@ -10,23 +10,33 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   int res = 0;
   
   memset( stbuf, 0, sizeof(struct stat) );
-  if( strcmp(path, "/") == 0 ){          //if path is root
+  // if path is root
+  if( strcmp(path, "/") == 0 ){        
     //stbuf->st_uid = 1000; 
     stbuf->st_mode = S_IFDIR | 0755; 
     stbuf->st_nlink = 2;
     res = 0;
     printf ("!! Exit: lfs_getattr function with exit code %u\n", res);
   } 
-  else {
+  else {  
     inode_t inode;
+    // get inode of the path
+    // when initializing the system, path = "/", get inode of root directory
+    // when "mkdir aaa", path = "/aaa", get inode of the directory aaa
+    // when "touch bbb", path = "/bbb", get inode of the file bbb
     int ret = dir_get_inode(path, &inode);
-    if (ret == 0) {
+    printf ("****************DEBUG***************************\n");
+    printf ("ret = %u, path = %s, inode->inode_id= %u\n", ret, path, 
+        inode.inode_id);
+    if (ret == 0) {  // if inode exists
+      /* TODO: set the stbuf->st_mode based on the type of the inode 
+         (file or directory) */
       stbuf->st_mode = S_IFREG | 0755;
       stbuf->st_nlink = 1;
       stbuf->st_size = inode.file_size;
       res = 0;
       printf ("!! Exit: lfs_getattr(), find file %s\n", path);
-    } else {
+    } else {  // if inode doesn't exist
       res = -ENOENT;
       printf ("!! Exit: lfs_getattr(), no such file  %s\n", path);
     }
@@ -37,14 +47,15 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
 static int lfs_mkdir(const char *path, mode_t mode){
   printf("Entry: lfs_mkdir() \n"); 
   
-  //configure new directory inode
+  // configure the inode of new created directory
   lfs_info->n_inode++;
   inode_t *new_dir = malloc(sizeof(inode_t)); 
+  // TODO: inode_id should be equal to lfs_info->n_inode
   new_dir->inode_id = lfs_info->n_inode - 1;
   new_dir->inode_type = DIRECTORY;
   new_dir->file_size = 0x1000;
   
-  // add entry to current directory
+  // add an entry to current directory structure cur_dir
   dir_t *cur_dir = open_cur_dir();
   print_inodemap (lfs_info->imap);
   print_dir_data (cur_dir);
@@ -101,13 +112,48 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   //int retstat = 0;
-  printf("lfs_create: debug****************************************\n");  
+  printf("Entry: lfs_create()\n");
   inode_t temp_ino;
   //uint32_t ret = 0;
   if( !dir_get_inode( path, &temp_ino ) ) {
-    printf("lfs_create: inode exists!\n"); 
+    printf("Error: inode already exists!\n"); 
+    return -EEXIST;
   } else {
-    inode_t *new_inode = (inode_t*)(lfs_info->cur_container->buf + lfs_info->cur_container->offset );
+    inode_t *new_inode = malloc (sizeof(inode_t));
+    memset (new_inode, 0, sizeof(inode_t));
+    lfs_info->n_inode++;
+    // chao -- please change inode_id to be lfs_info->n_inode
+    new_inode->inode_id = lfs_info->n_inode-1;
+    new_inode->inode_type = REGULAR_FILE;
+    new_inode->file_size = 0x1000;
+    new_inode->owner = 0;
+    new_inode->mode = 755;
+    // TODO: set all properties of inode    
+    // inode->direct_blk[0] = lfs_info->buf_container->offset;    
+    // file_recipe address added in commit;
+    char * filename = get_filename (path);
+    // change cur dir inode and cur dir data and commit
+    dir_t * cur_dir = open_cur_dir();
+    dir_add_entry( cur_dir, filename , new_inode->inode_id);
+    dir_commit_changes (cur_dir, lfs_info->cur_inode);
+    // create a file recipe structure
+    //file_recipe_t *file_recipe = malloc (sizeof (file_recipe_t));
+    //memset (file_recipe, 0, sizeof (file_recipe_t));
+    char *new_inode_seg = malloc (SEG_SIZE);
+    memset (new_inode_seg, 0, SEG_SIZE);
+    memcpy (new_inode_seg, new_inode, sizeof(inode_t));
+    lfs_info->imap->records[lfs_info->n_inode-1].inode_id = new_inode->inode_id;
+    lfs_info->imap->records[lfs_info->n_inode-1].inode_addr = lfs_info->buf_container->offset;
+    printf ("&&&&&&&&&&&&&&&&&&&&DEBUGDEBUG *********************\n");
+    print_inodemap (lfs_info->imap);
+    container_add_seg (lfs_info->buf_container, new_inode_seg);
+    free (new_inode);
+    free(new_inode_seg);
+
+
+   /****
+   // inode_t *new_inode =
+        (inode_t*)(lfs_info->buf_container->buf + lfs_info->cur_container->offset );
     printf("lfs_create: current container offset %u \n", lfs_info->cur_container->offset);
     lfs_info->imap->records[lfs_info->n_inode++].inode_id = lfs_info->n_inode; 
     new_inode->inode_id = lfs_info->n_inode;
@@ -115,7 +161,7 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     printf("lfs_create: create inode with id: %u \n",
              new_inode->inode_id); 
     new_inode->inode_type = REGULAR_FILE; 
-    
+    **/
   }
   
   return 0; 

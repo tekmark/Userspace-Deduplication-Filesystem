@@ -4,10 +4,14 @@
 uint32_t dir_get_inode(const char *path, inode_t * inode){
     //use path to find the target inode
     dir_t * cur_dir = open_cur_dir();
+    printf ("&&&&&&&&&&&&&&&&& DEBUG &&&&&&&&&&&&&&&&&&&&&\n");
+    print_dir_data (cur_dir);
     uint32_t inode_id = 0;
     uint32_t ret;
     ret = get_inode_id_from_filename ((char *)path, cur_dir, &inode_id);
     if (ret == FAIL) {
+        printf ("****************DEBUG******************************\n");
+        printf ("return false: get_inode_id_From_filename\n");
         return ret;
     }
 
@@ -111,6 +115,9 @@ dir_t *open_cur_dir(){
                printf ("%c", *(lfs_info->cur_container->buf + index * SEG_SIZE +k));
            }
            printf ("\n");
+           inode_t *inode = 
+               (inode_t *)(lfs_info->cur_container->buf + index * SEG_SIZE); 
+           printf ("!!!!!!print inode: inode->inode_id: %x\n", inode->inode_id);
         }
     }
     // create a structure holding the directory
