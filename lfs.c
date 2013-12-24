@@ -1,7 +1,8 @@
 #include"lfs.h"
 
 static int lfs_getattr(const char *path, struct stat *stbuf){
-  /*printf("lfs_getattr: path: %s\n", path);
+     printf ("!!Entry: lfs_getattr function\n"); 
+ /*printf("lfs_getattr: path: %s\n", path);
   printf("lfs_getattr: inode num: %ld\n", (long)stbuf->st_ino);
   printf("lfs_getattr: ownership uid=%ld, gid=%ld\n", (long)stbuf->st_uid, (long)stbuf->st_gid); 
   printf("Last file modification:   %s", ctime(&(stbuf->st_mtime)));
@@ -9,42 +10,83 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   int res = 0;
   
   memset( stbuf, 0, sizeof(struct stat) );
-  
   if( strcmp(path, "/") == 0 ){          //if path is root
-    printf("lfs_getattr: path is / \n");
     //stbuf->st_uid = 1000; 
-    stbuf->st_mode = S_IFDIR | 0777; 
+    stbuf->st_mode = S_IFDIR | 0755; 
     stbuf->st_nlink = 2;
     res = 0;
-    return res;
-  } else {
-    printf("lfs_getattr: path is %s \n", path);
-    dir_t *dir = open_cur_dir();
-    printf("dir records[0]: %s", dir->records[0].filename); 
-    uint32_t i = 0; 
-    for( i = 0; i != dir->num; i++) {
-      
-      
+    printf ("!! Exit: lfs_getattr function with exit code %u\n", res);
+  } 
+  else {
+    inode_t inode;
+    int ret = dir_get_inode(path, &inode);
+    if (ret == 0) {
+      stbuf->st_mode = S_IFREG | 0755;
+      stbuf->st_nlink = 1;
+      stbuf->st_size = inode.file_size;
+      res = 0;
+      printf ("!! Exit: lfs_getattr(), find file %s\n", path);
+    } else {
+      res = -ENOENT;
+      printf ("!! Exit: lfs_getattr(), no such file  %s\n", path);
     }
-    return 0; 
   }
-
-  
-  return 0; 
+  return res;
 }
 
 static int lfs_mkdir(const char *path, mode_t mode){
+  printf("Entry: lfs_mkdir() \n"); 
+  
+  //configure new directory inode
+  lfs_info->n_inode++;
+  inode_t *new_dir = malloc(sizeof(inode_t)); 
+  new_dir->inode_id = lfs_info->n_inode - 1;
+  new_dir->inode_type = DIRECTORY;
+  new_dir->file_size = 0x1000;
+  
+  // add entry to current directory
+  dir_t *cur_dir = open_cur_dir();
+  print_inodemap (lfs_info->imap);
+  print_dir_data (cur_dir);
+  char *new_dirname = get_filename (path);
+  inode_t *cur_dir_inode = lfs_info->cur_inode;
+  dir_add_entry( cur_dir, new_dirname, new_dir->inode_id);
+  dir_commit_changes (cur_dir, cur_dir_inode);
+  
+  dir_t *test_dir = open_cur_dir();
+ 
+  // modify new directory data
+  dir_t *dir_data = malloc (sizeof(dir_t));
+  dir_data->num = 0;
+  dir_data->records = malloc( 20 * sizeof(dir_record_t));
+  // add two entries to new directory data( .. and . )
+  dir_add_entry (dir_data, "..", cur_dir_inode->inode_id); 
+  dir_add_entry (dir_data, ".", new_dir->inode_id);
+  dir_commit_changes (dir_data, new_dir);
+  
+  printf ("*************lfs_mkdir: Print inode_map ****************** \n");
+  print_inodemap(lfs_info->imap); 
+  printf ("*************lfs_mkdir: Print current dir data:************ \n");
+  print_dir_data (cur_dir);
+  printf ("************lfs_mkdir: Print new dir data: *****************\n");
+  print_dir_data (dir_data);
+
+  free (cur_dir);
+  free (new_dir);
+  free (dir_data);
   return 0; 
 }
 
 static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                       off_t offset, struct fuse_file_info *fi){
+                       off_t offset, struct fuse_file_info *fi) {
+  printf("!! Entry: lfs_readdir() \n");
   (void) offset;
   (void) fi;
   //struct file_inode_hash *s;
 
   if (strcmp(path, "/") != 0) {
-     return -1;
+      printf ("!! Exit: lfs_readdir with exit code %u\n", -ENOENT);
+      return -ENOENT;
   }
   
   dir_t *dir = open_cur_dir();
@@ -53,15 +95,15 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   for( i = 0; i != dir->num; i++) {
     filler(buf, dir->records[i].filename, NULL, 0);
   } 
-   
+  printf ("!! Exit: lfs_readdir with exit code 0 \n");
   return 0; 
 }
 
 static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
-  int retstat = 0;
+  //int retstat = 0;
   printf("lfs_create: debug****************************************\n");  
   inode_t temp_ino;
-  uint32_t ret = 0;
+  //uint32_t ret = 0;
   if( !dir_get_inode( path, &temp_ino ) ) {
     printf("lfs_create: inode exists!\n"); 
   } else {
@@ -131,6 +173,7 @@ static struct fuse_operations lfs_oper = {
     .open       = lfs_open,
     .read       = lfs_read,
     .write      = lfs_write,
+    .create     = lfs_create
 };
 
 
@@ -174,8 +217,8 @@ void lfs_init() {
   root_dir->num = 0; 
   //root_dir->num = 2; 
   root_dir->records = malloc( 20 * sizeof(dir_record_t));  
-  dir_add_entry( root_dir, "../", root_inode->inode_id); //add current and parent directory
-  dir_add_entry( root_dir, "./", root_inode->inode_id);  //for root, they are both itself
+  dir_add_entry( root_dir, "..", root_inode->inode_id); //add current and parent directory
+  dir_add_entry( root_dir, ".", root_inode->inode_id);  //for root, they are both itself
   
   root_inode->direct_blk[0] = BLK_SIZE + 2 * BLK_SIZE;          //header is 0, inode is the 1 
   printf("init: root_inode->direct_blk[0] %x\n", root_inode->direct_blk[0]); 
@@ -192,6 +235,6 @@ void lfs_init() {
 
 
 int main ( int  argc, char *argv[] ) {
-  lfs_init();  
+  lfs_init();
   return fuse_main( argc, argv, &lfs_oper, NULL); 
 }

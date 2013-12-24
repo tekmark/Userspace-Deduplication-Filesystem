@@ -11,12 +11,12 @@
 
 #define BLK_SIZE 4096                             //block size is 4K
 #define SEG_SIZE BLK_SIZE                         //segment equals block size
-#define CONTAINER_BLK_NUM 8                       //8 blocks per container
+#define CONTAINER_BLK_NUM 256                       //8 blocks per container
 #define CONTAINER_SEG_NUM CONTAINER_BLK_NUM-1     //1st block is for container 
                                                   //header
 #define CONTAINER_SIZE BLK_SIZE*CONTAINER_BLK_NUM //
 
-#define MAX_CONTAINER_NUM 1024      //disk size is 1024 * 4K * 8 + 4K      
+#define MAX_CONTAINER_NUM 128      //disk size is 1024 * 4K * 8 + 4K      
 
 #define DATA 0
 #define METADATA 1

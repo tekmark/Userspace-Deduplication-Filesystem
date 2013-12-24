@@ -8,6 +8,7 @@
 #include<assert.h>
 #include<fuse.h>
 #include<sys/types.h>
+#include<errno.h>
 #include"uthash.h"
 #include"util.h"
 #include"inode.h"

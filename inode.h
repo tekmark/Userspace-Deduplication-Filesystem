@@ -53,4 +53,5 @@ typedef struct {
   inode_map_record_t records[MAX_INODE_NUM]; 
 } inode_map_t; 
 
+void print_inodemap(inode_map_t * inodemap);
 #endif
