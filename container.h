@@ -9,17 +9,12 @@
 #include"util.h"
 #include"lfs.h"
 
-#define BLK_SIZE 4096                             //block size is 4K
-#define SEG_SIZE BLK_SIZE                         //segment equals block size
-#define CONTAINER_BLK_NUM 8                       //8 blocks per container
-#define CONTAINER_SEG_NUM CONTAINER_BLK_NUM-1     //1st block is for container 
-                                                  //header
-#define CONTAINER_SIZE BLK_SIZE*CONTAINER_BLK_NUM //
-
-#define MAX_CONTAINER_NUM 1024      //disk size is 1024 * 4K * 8 + 4K      
-
-#define DATA 0
-#define METADATA 1
+const uint32_t c_blk_size = 4096;                 //block size is 4K
+const uint32_t c_seg_size = 4096;           //segment equals block size
+const uint32_t c_container_blk_num = 8;           
+const uint32_t c_container_seg_num = 8;
+const uint32_t c_container_size = 4096 * 1024;
+const uint32_t c_max_container_num = 1024;
 
 typedef struct {
   fingerprint_t fp;
@@ -29,20 +24,21 @@ typedef struct {
 typedef struct {
   uint32_t container_id;
   uint32_t container_type; 
-  fingerprint_seg_record_t records[CONTAINER_SEG_NUM]; 
+  fingerprint_seg_record_t records[8];   //should be same as container_seg_num
 } container_header_t; 
 
 typedef struct container{
   container_header_t *header; 
   char *buf;
-  uint32_t offset; 
+  uint32_t seg_offset; 
 } container_t; 
 
-//initialize a container
+//initialize a container, return a new container.
 container_t* container_init();
+void container_free(container_t *); 
+
 uint32_t container_copy(container_t * dst_container, 
                     container_t * src_container); 
-void container_free(container_t *); 
 
 uint32_t container_write( container_t *container, uint32_t *new_id); 
 
