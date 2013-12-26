@@ -29,14 +29,14 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
     // when initializing the system, path = "/", get inode of root directory
     // when "mkdir aaa", path = "/aaa", get inode of the directory aaa
     // when "touch bbb", path = "/bbb", get inode of the file bbb
-    int ret = dir_get_inode(path, &inode);
+    int ret = dir_get_inode( path, &inode);
     printf ("****************DEBUG***************************\n");
     printf ("ret = %u, path = %s, inode->inode_id= %u\n", ret, path, 
         inode.inode_id);
     if (ret == 0) {  // if inode exists
       /* TODO: set the stbuf->st_mode based on the type of the inode 
          (file or directory) */
-      stbuf->st_mode = S_IFREG | 0755;
+      stbuf->st_mode = S_IFDIR | 0777;
       stbuf->st_nlink = 1;
       stbuf->st_size = inode.file_size;
       res = 0;
@@ -56,9 +56,10 @@ static int lfs_mkdir(const char *path, mode_t mode){
   lfs_info->n_inode++;
   inode_t *new_dir = malloc(sizeof(inode_t)); 
   // TODO: inode_id should be equal to lfs_info->n_inode
-  new_dir->inode_id = lfs_info->n_inode - 1;
+  new_dir->inode_id = lfs_info->n_inode;
   new_dir->inode_type = DIRECTORY;
   new_dir->file_size = 0x1000;
+  new_dir->mode = S_IFREG | 0777; 
   
   // add an entry to current directory structure cur_dir
   dir_t *cur_dir = open_cur_dir();
@@ -164,7 +165,7 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     lfs_info->imap->records[lfs_info->n_inode-1].inode_addr = lfs_info->buf_container->seg_offset;
     printf ("&&&&&&&&&&&&&&&&&&&&DEBUGDEBUG *********************\n");
     print_inodemap (lfs_info->imap);
-    container_add_seg (lfs_info->buf_container, new_inode);
+    container_add_seg (lfs_info->buf_container, (void*)new_inode);
     free (new_inode);
   }
   

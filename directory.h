@@ -35,7 +35,7 @@ void print_dir_data(dir_t *dir);
 
 uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
     uint32_t *pinode_id);
-inode_t * get_inode_from_inode_id (uint32_t inode_id);
+uint32_t get_inode_from_inode_id (inode_t *, uint32_t inode_id);
 uint32_t dir_commit_changes(dir_t *dir, inode_t *inode);
 
 #endif

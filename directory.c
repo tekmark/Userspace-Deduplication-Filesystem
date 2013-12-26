@@ -12,12 +12,17 @@ uint32_t dir_get_inode(const char *path, inode_t * inode){
     if (ret == FAIL) {
         printf ("get_inode_id_From_filename: return false, no such inode\n");
         return ret;
+    } else {
+        printf ("dir_get_inode: find inode_id %u\n", inode_id); 
     }
 
     // get inode structure based on inode id
-    inode = get_inode_from_inode_id (inode_id);
-    if (inode == NULL) {
+    ret = get_inode_from_inode_id (inode, inode_id);
+    if (ret != 0) {
+        printf("dir_get_inode: return false"); 
         ret = FAIL;
+    } else {
+        printf("dir_get_inode: inode_id %u\n", inode->inode_id); 
     }
     
     return ret;
@@ -200,19 +205,19 @@ uint32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
         lfs_info->imap->records[lfs_info->n_inode-1].inode_id = inode->inode_id;
         lfs_info->imap->records[lfs_info->n_inode-1].inode_addr = inode_new_addr;
     }
-    int index = 0; 
+    //int index = 0; 
     // if cur container id == buf container id, copy buf container to cur_container
     // TODO: save this step by making modifications in open_cur_dir()
-    if (lfs_info->buf_container->header->container_id ==
+    /*if (lfs_info->buf_container->header->container_id ==
         lfs_info->cur_container->header->container_id) {
         container_copy(lfs_info->cur_container, lfs_info->buf_container);
         printf ("dir_commit_changes: copy from buf container to cur container\n");
-    }
+    }*/
     
     // print all data in cur_container
-    for( index = 0; index < c_container_size; index++){
+    /*for( index = 0; index < c_container_size; index++){
       printf("%c", *(lfs_info->cur_container->buf+index)); 
-    }
+    }*/
     free (inode_seg_buf);
     free (dir_data_seg_buf);
     ret = 0;
@@ -295,15 +300,18 @@ uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
 }
 
 // get inode from inode id by looking up in the inode map
-inode_t * get_inode_from_inode_id (uint32_t inode_id) {
+uint32_t get_inode_from_inode_id (inode_t* inode, uint32_t inode_id) {
+    printf("**********get_inode_from_inode_id(); enter****************\n");
+    printf("get_inode_from_inode_id: inode_id %u\n", inode_id); 
     uint32_t index;
     uint32_t inode_addr = 0;
-    char * inode_buf = malloc (sizeof (inode_t));
-    inode_t * inode;
+    //inode_t * inode = malloc (sizeof (inode_t));
+    //inode_t * inode;
     // look up in the inode map
     for (index = 0; index < MAX_INODE_NUM; index++) {
         if (lfs_info->imap->records[index].inode_id == inode_id) {
             inode_addr = lfs_info->imap->records[index].inode_addr;
+            printf(" get_inode_from_inode_id: inode address: %x\n", inode_addr); 
             break;
         }
     }
@@ -311,26 +319,32 @@ inode_t * get_inode_from_inode_id (uint32_t inode_id) {
     // entry not found
     if (inode_addr == 0) {
         printf ("cannot find inode address from inode_id.\n");
-        return NULL;
+        return -1;
     }
 
     // calculate container id and segment offset from the inode address
     uint32_t cid = inode_addr / c_container_size;
-    uint32_t seg_offset = inode_addr % c_container_size / c_blk_size;
+    uint32_t seg_offset = (inode_addr-c_blk_size) % c_container_size / c_blk_size;
+    printf("get_inode_from_inode_id: cid %u, seg_offset %u \n", cid, seg_offset); 
     // if cid not equal to current id, fetch container from disk
     // TODO: if buf container is has the same cid as the required one, 
     // read directly from buf container (saves the resource of copying from
     // buf container to cur container)
-    if (cid != lfs_info->cur_container->header->container_id) {
-        container_read (lfs_info->cur_container, cid);
+    if (cid == lfs_info->buf_container->header->container_id) {
+      printf("open_cur_dir: read data from buf container\n");
+      memcpy( inode, lfs_info->buf_container->buf + seg_offset * c_blk_size, sizeof(inode_t));
+    } else if (cid != lfs_info->cur_container->header->container_id) {
+      container_read (lfs_info->cur_container, cid);
+      printf("open_cur_dir: required container is in disk, load it to mem\n");
+      memcpy (inode, lfs_info->cur_container->buf + seg_offset * c_blk_size, sizeof(inode_t));
+    } else {                                 //if target blk is in cur container
+      memcpy (inode, lfs_info->cur_container->buf + seg_offset * c_blk_size, sizeof(inode_t));
     }
-    // copy from current container to inode buf
-    memcpy (inode_buf, 
-        lfs_info->cur_container->buf + seg_offset * c_seg_size,
-        sizeof(inode_t));
+    
+    printf("get_inode_from_inode_id: get memcpy, inode_id = %u\n", inode->inode_id); 
     // cast buf to inode type
-    inode = (inode_t *)inode_buf;
-    return inode;
+    //inode = (inode_t *)inode_buf;
+    return 0;
 }
 
 void print_dir_data (dir_t * dir) {
