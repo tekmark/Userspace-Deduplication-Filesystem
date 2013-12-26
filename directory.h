@@ -2,9 +2,11 @@
 #define DIRECTORY__H
 
 #include <stdint.h>
+#include "global.h"
 #include "util.h"
 #include "inode.h"
 #define MAX_FILENAME_LENGTH 256
+#define NUM_OF_RECORD_PER_SEG 15
 
 #define SUCCESS 0
 #define FAIL    -1
@@ -34,5 +36,6 @@ void print_dir_data(dir_t *dir);
 uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
     uint32_t *pinode_id);
 inode_t * get_inode_from_inode_id (uint32_t inode_id);
+uint32_t dir_commit_changes(dir_t *dir, inode_t *inode);
 
 #endif

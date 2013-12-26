@@ -1,6 +1,15 @@
 #include"container.h"
 #include"global.h"
 
+const uint32_t c_blk_size = 4096;                 //block size is 4K
+const uint32_t c_seg_size = 4096;           //segment equals block size
+const uint32_t c_container_blk_num = 8;
+const uint32_t c_container_seg_num = 8;
+const uint32_t c_container_size = 4096 * 1024;
+const uint32_t c_max_container_num = 1024;
+
+
+
 container_t* container_init(){
   //allocate memory for a new container
   container_t *container = (container_t*)malloc( sizeof(container_t) );
@@ -39,9 +48,9 @@ uint32_t container_write( container_t *container, uint32_t *new_id) {
 //read a container from disk 
 uint32_t container_read(container_t *container, uint32_t container_id) { 
   //calculate target container address
-  uint32_t addr = container_id * c_container_size + blk_size; 
+  uint32_t addr = container_id * c_container_size + c_blk_size; 
   pread(lfs_info->fd, container->buf, c_container_size, addr);
-  container->seg_offset = container_blk_num;  //container is full
+  container->seg_offset = c_container_blk_num;  //container is full
   return 0; 
 }
 
@@ -53,11 +62,11 @@ uint32_t container_add_seg( container_t *container, char *seg_buf) {
   //uint32_t seg_num = container->offset/SEG_SIZE;  //+1 because next seg
   printf("container_add_seg: container_offset %u",
            container->seg_offset); 
-  if ( container->seg_offset >= C_container_blk_num ) {
+  if ( container->seg_offset >= c_container_blk_num ) {
     printf("cannot add seg to container because no available seg\n");
     return -1;                           
   } else {
-    printf("seg is added to container with seg_no %u\n", seg_num);
+    printf("seg is added to container with seg_no %u\n", container->seg_offset);
     memcpy( container->buf + container->seg_offset * c_seg_size, 
             seg_buf, c_seg_size); 
     container->seg_offset += 1;
@@ -68,11 +77,11 @@ uint32_t container_add_seg( container_t *container, char *seg_buf) {
 uint32_t container_get_seg( container_t *container, uint32_t offset, 
                        char *seg_buf) {
   if ( offset * c_seg_size > container->seg_offset ){
-    printf("no such seg with seg_offset %u in container\n", seg_offset); 
+    printf("no such seg with seg_offset %u in container\n", container->seg_offset); 
     return -1; 
   }
   else {
-    printf("get seg %u from container successfully\n", seg_offset);
+    printf("get seg %u from container successfully\n", container->seg_offset);
     memcpy(seg_buf, container->buf + offset*c_seg_size, c_seg_size); 
     return 0;  
   }

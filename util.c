@@ -6,9 +6,8 @@ uint8_t* compute_fingerprint(fingerprint_t *fp, uint8_t *buf,
 }
 
 //get the file name from the path
-char* get_filename(const char *path) {
-        char *p;
-        p = path;
+const char* get_filename(const char *path) {
+        const char *p =  path;
         while(*p != '\0') {
                 p++;
         }
