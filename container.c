@@ -84,7 +84,43 @@ uint32_t container_get_seg( container_t *container, uint32_t offset,
     printf("get seg %u from container successfully\n", container->seg_offset);
     memcpy(seg_buf, container->buf + offset*c_seg_size, c_seg_size); 
     return 0;  
+  }   
+} 
+
+uint32_t container_header_add_fingerprint( container_t *container, 
+                    fingerprint_seg_record_t *record){
+  uint32_t index = 0; 
+  for( index = 0; index != 8; index++) {
+    if(container->header->records[index].seg == 0){
+      container->header->records[index].seg = record->seg;
+      memcpy( container->header->records[index].fp.fingerprint, 
+                  record->fp.fingerprint, FINGERPRINT_SIZE);
+      printf("container_header_add_fingerprint: fingerprint is added to entry#%u\n", 
+              index);
+    }
   }
-    
+  return 0; 
+}
+
+//return 
+uint32_t container_header_find_fingerprint( container_t *container,
+                    fingerprint_t *fp) {
+  uint32_t ret = 0;
+  uint32_t i, j;
+  for ( i = 0; i != 8; i++) {
+    for (j = 0; j != FINGERPRINT_SIZE; j++) {
+      if ( container->header->records[i].fp.fingerprint[j] != fp->fingerprint[j]){
+        break;   
+      }
+      ret = container->header->records[i].seg;
+      if( ret == 0) {
+        printf("find useless fingerprint\n"); 
+      } 
+      printf("container_header_find_fingerprint: find fingerprint record in header, seg: %u\n",               
+                   container->header->records[i].seg);
+      return ret;  
+    }
+  }
+  return ret; 
 } 
 

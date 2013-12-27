@@ -210,7 +210,7 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
   uint32_t seg_offset = (inode.file_recipe - c_blk_size)%c_container_size/c_blk_size;
   printf("lfs_read: calculate file recipe cid : %u, seg offset :%u\n", 
          cid, seg_offset);
-  file_recipe_t *file_recipe = lfs_info->buf_container->buf + seg_offset * c_seg_size;
+  file_recipe_t *file_recipe = (file_recipe_t*)(lfs_info->buf_container->buf + seg_offset * c_seg_size);
   print_filerecipe(file_recipe);
   namespace_record_t record;
   namespace_record_t *result; 
@@ -227,8 +227,14 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
   printf("hash table size; %u\n", cnt); 
   if( result == NULL ) {
     printf("cannot find fingerprint in namespace\n"); 
+    return 0; 
   } else {
-    printf("find fingerprint in namespace\n"); 
+    printf("find fingerprint in namespace, container_id = %u\n", result->container_id);
+    uint32_t seg_num = 
+          container_header_find_fingerprint(lfs_info->buf_container, &record.fp); 
+    printf("find seg offset in container header%u\n", seg_num); 
+    memcpy(buf, lfs_info->buf_container->buf + seg_num * c_blk_size, c_blk_size);
+    return sizeof(buf); 
   }
   
   return 0; 
@@ -258,6 +264,8 @@ static int lfs_write(const char *path, const char *buf, size_t size,
   time(&inode.mtime);
   file_recipe_record_t *recipe_entry = malloc( sizeof(file_recipe_record_t) );
   file_recipe_t *recipe = (file_recipe_t*)( lfs_info->buf_container->buf + seg_offset * c_seg_size); 
+
+  fingerprint_seg_record_t *header_record = malloc( sizeof( fingerprint_seg_record_t));
   //fingerprint_t fp;
   uint32_t i = 0; 
   while( seg_cnt != 0) {
@@ -266,6 +274,14 @@ static int lfs_write(const char *path, const char *buf, size_t size,
                         c_seg_size);
     recipe_entry->seg_num = i; 
     filerecipe_add_entry( recipe, recipe_entry); 
+    
+    //header fingerprint entry;
+    memset(header_record, 0, sizeof(fingerprint_seg_record_t) ); 
+    memcpy(header_record->fp.fingerprint, recipe_entry->fingerprint.fingerprint, FINGERPRINT_SIZE);
+    header_record->seg = lfs_info->buf_container->seg_offset;
+    printf("lfs_write: seg_offset %u\n", header_record->seg);
+    container_header_add_fingerprint(lfs_info->buf_container, header_record); 
+    
     fingerprint_print(&recipe_entry->fingerprint);
     
      
@@ -284,13 +300,7 @@ static int lfs_write(const char *path, const char *buf, size_t size,
    
     item->container_id = lfs_info->buf_container->header->container_id;  
     HASH_ADD(hh, lfs_info->lfs_namespace, fp, sizeof(fingerprint_t), item);
-    //if(item != NULL) {                             //if segment exists
-    //uint32_t container_id = item->container_id;    
-    //  recipe_set_fingerprint( inode->file_recipe, 
-    //                           recipe_seg_index, &fp);
-    //  recipe_seg_index++; 
-    //} else {
-    // }   
+    
   }
   
   print_filerecipe(recipe); 

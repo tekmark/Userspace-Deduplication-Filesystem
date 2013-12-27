@@ -50,5 +50,8 @@ void container_clean( uint32_t container_id, uint32_t *live_seg_vec,
 
 uint32_t container_add_seg( container_t *container, char *seg_buf);
 uint32_t container_get_seg( container_t *container, uint32_t seg_offset, 
-                            char *seg_buf); 
+                            char *seg_buf);
+
+uint32_t container_header_add_fingerprint(container_t*, fingerprint_seg_record_t*); 
+uint32_t container_header_find_fingerprint(container_t*, fingerprint_t*); 
 #endif
