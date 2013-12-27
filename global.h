@@ -6,6 +6,8 @@
 #include"container.h"
 #include"util.h"
 #include"uthash.h"
+
+
 #define MAX_FILENAME_LEN 256
 
 typedef struct container container_t; 
@@ -28,8 +30,10 @@ typedef struct {
   container_t *buf_container; 
   
   uint32_t cur_container_id;  
-  inode_t *cur_inode; 
-   
+  inode_t *cur_inode;
+  char *cur_path;
+  char *par_path;  
+  
   uint32_t fd;
 
 } lfs_global_info_t;

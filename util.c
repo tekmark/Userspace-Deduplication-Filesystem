@@ -6,9 +6,8 @@ uint8_t* compute_fingerprint(fingerprint_t *fp, uint8_t *buf,
 }
 
 //get the file name from the path
-char* get_filename(const char *path) {
-        char *p;
-        p = (char *)path;
+const char* get_filename(const char *path) {
+        const char *p =  path;
         while(*p != '\0') {
                 p++;
         }
@@ -26,3 +25,34 @@ uint32_t get_division_result (uint32_t dividend, uint32_t divisor) {
     }
     return result;
 }
+
+char* get_parentpath(const char *path)
+{
+    if (!strcmp ((char *)path, "/"))
+        return (char *)path;
+
+    char *p_end = (char *)path;
+    int length = 0;
+    char *parent_path;
+
+    while(*p_end != '\0') {
+        length++;
+        p_end++;
+    }
+
+    while(*p_end != '/') {
+        length--;
+        p_end--;
+    }
+    if (length == 0)
+        return "/";
+    //length--;
+    printf ("length == %u\n", length);
+    parent_path = (char *)malloc (length + 1);
+    memset (parent_path, 0, length + 1);
+    memcpy (parent_path, path, length);
+    if (strcmp (parent_path, "") == 0)
+        return "/";
+    return parent_path;
+}
+

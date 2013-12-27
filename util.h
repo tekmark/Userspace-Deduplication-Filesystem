@@ -4,7 +4,8 @@
 #include<openssl/sha.h>
 #include<stdio.h>
 #include<stdint.h>
-
+#include<stdlib.h>
+#include<string.h>
 
 #define FINGERPRINT_SIZE 20    //sha1 result is 20 bytes 
 
@@ -13,7 +14,8 @@ typedef struct {
 } fingerprint_t;
 
 uint8_t* compute_fingerprint(fingerprint_t *fp, uint8_t *buf, uint32_t size);
-char * get_filename(const char*path); 
+const char * get_filename(const char*path); 
+char* get_parentpath(const char *path);
 uint32_t get_division_result (uint32_t dividend, uint32_t divisor);
 
 #endif

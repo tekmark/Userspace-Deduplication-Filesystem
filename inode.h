@@ -2,6 +2,8 @@
 #define INODE_H_
 
 #include<time.h>
+#include<sys/types.h>
+#include<fuse.h>
 #include"util.h"
 
 #define RECIPE_NUM 8
@@ -24,7 +26,8 @@ typedef struct {
   uint32_t inode_type; 
   uint32_t file_size;        //maximum file size is 4gb
   uint32_t owner;            //uid of owner
-  uint32_t mode;             //rwx, file or directory 
+  uint32_t mode;             //rwx, file or directory
+  uint32_t link; 
   time_t ctime;              //inode change time
   time_t mtime;              //file content last modification time
   time_t atime;              //file content last access time
@@ -53,5 +56,6 @@ typedef struct {
   inode_map_record_t records[MAX_INODE_NUM]; 
 } inode_map_t; 
 
-void print_inodemap(inode_map_t * inodemap);
+void print_inodemap( inode_map_t * inodemap); 
+void root_inode_init(inode_t *); 
 #endif
