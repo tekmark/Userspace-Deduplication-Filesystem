@@ -54,4 +54,5 @@ uint32_t container_get_seg( container_t *container, uint32_t seg_offset,
 
 uint32_t container_header_add_fingerprint(container_t*, fingerprint_seg_record_t*); 
 uint32_t container_header_find_fingerprint(container_t*, fingerprint_t*); 
+void container_print_header(container_t * container); 
 #endif

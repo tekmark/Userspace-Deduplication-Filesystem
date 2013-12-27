@@ -97,6 +97,7 @@ uint32_t container_header_add_fingerprint( container_t *container,
                   record->fp.fingerprint, FINGERPRINT_SIZE);
       printf("container_header_add_fingerprint: fingerprint is added to entry#%u\n", 
               index);
+    break;
     }
   }
   return 0; 
@@ -124,3 +125,11 @@ uint32_t container_header_find_fingerprint( container_t *container,
   return ret; 
 } 
 
+void container_print_header(container_t * container) {
+  uint32_t i;
+  printf("container_print_header*********************************\n"); 
+  for( i = 0; i != 8; i++ ){
+    fingerprint_print( &container->header->records[i].fp ); 
+    printf(" %u \n", container->header->records[i].seg); 
+  }
+}
