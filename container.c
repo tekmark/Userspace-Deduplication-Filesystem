@@ -60,7 +60,7 @@ void container_clean( uint32_t container_id, uint32_t *live_seg,
 
 uint32_t container_add_seg( container_t *container, char *seg_buf) {
   //uint32_t seg_num = container->offset/SEG_SIZE;  //+1 because next seg
-  printf("container_add_seg: container_offset %u",
+  printf("container_add_seg: container_offset %u\n",
            container->seg_offset); 
   if ( container->seg_offset >= c_container_blk_num ) {
     printf("cannot add seg to container because no available seg\n");

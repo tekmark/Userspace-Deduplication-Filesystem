@@ -175,8 +175,16 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
             c_blk_size + lfs_info->buf_container->seg_offset * c_blk_size ;
     printf ("&&&&&&&&&&&&&&&&&&&&DEBUGDEBUG *********************\n");
     print_inodemap (lfs_info->imap);
+    new_inode->file_recipe = lfs_info->buf_container->header->container_id * c_container_size
+                      + lfs_info->buf_container->seg_offset * c_blk_size
+                      + c_blk_size + c_blk_size;
+    printf("lfs_create: file_recipe addr %x\n", new_inode->file_recipe); 
     container_add_seg (lfs_info->buf_container, (void*)new_inode);
+    file_recipe_t *file_recipe = malloc( c_seg_size );
+    memset( file_recipe, 0 , c_seg_size); 
+    container_add_seg (lfs_info->buf_container, (void*)file_recipe); 
     free (new_inode);
+    free (file_recipe); 
   }
   
   return 0; 
@@ -190,6 +198,21 @@ static int lfs_open(const char *path, struct fuse_file_info *fi){
 
 static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
                     struct fuse_file_info *fi){
+  printf("lfs_read: enter\n"); 
+  uint32_t ret = 0;
+  inode_t inode;
+  ret = dir_get_inode(path, &inode);
+  if( ret != 0 ) {
+  }
+  printf("lfs_read: find target inode: inode_id = %u, file_recipe addr: %x\n", 
+        inode.inode_id, inode.file_recipe);
+  uint32_t cid = (inode.file_recipe - c_blk_size)/c_container_size;
+  uint32_t seg_offset = (inode.file_recipe - c_blk_size)%c_container_size/c_blk_size;
+  printf("lfs_read: calculate file recipe cid : %u, seg offset :%u\n", 
+         cid, seg_offset);
+  file_recipe_t *file_recipe = lfs_info->buf_container->buf + seg_offset * c_seg_size;
+  print_filerecipe(file_recipe); 
+  
   return 0; 
 }
 
@@ -197,36 +220,67 @@ static int lfs_write(const char *path, const char *buf, size_t size,
                      off_t offset, struct fuse_file_info *fi){
 
   printf("lfs_write: enter\n");
+  printf("buffer data to write %s, size: %u\n", buf, size);
+  printf("path to write %s\n", path); 
+  int ret = 0; 
+  inode_t inode;
+  //get inode of that inode
+  ret = dir_get_inode(path, &inode);
+  if(ret != 0 ){
+  }
+  printf("lfs_write: find target inode, inode_id = %u, file_recipe = %x\n", 
+           inode.inode_id, inode.file_recipe);
+  uint32_t cid = (inode.file_recipe - c_blk_size)/c_container_size;
+  uint32_t seg_offset = (inode.file_recipe - c_blk_size)%c_container_size/c_blk_size; 
   
-/*    
-  uint32_t recipe_seg_index = offset/SEG_SIZE;
-  uint32_t align = SEG_SIZE - offset%SEG_SIZE;
-  uint32_t seg_cnt = size/SEG_SIZE;
-  //get inode of the file
-  uint32_t inode_id; 
-  get_inode_id( path, &id);
-  inode_t *inode; 
-  get_inode( inode_id, inode);  
-  fingerprint_t fp;
+  //uint32_t recipe_seg_index = offset/SEG_SIZE;
+  //uint32_t align = SEG_SIZE - offset%SEG_SIZE;
+  uint32_t seg_cnt = size/c_seg_size + 1;
+  //inode modification time
+  time(&inode.mtime);
+  file_recipe_record_t *recipe_entry = malloc( sizeof(file_recipe_record_t) );
+  file_recipe_t *recipe = (file_recipe_t*)( lfs_info->buf_container->buf + seg_offset * c_seg_size); 
+  //fingerprint_t fp;
   uint32_t i = 0; 
   while( seg_cnt != 0) {
     //compute fingerprint of $4KB
-    compute_fingerprint(&fp, (uint8_t*)(buf + align + i*SEG_SIZE),
-                        SEG_SIZE);
+    compute_fingerprint(&recipe_entry->fingerprint, (uint8_t*)(buf + i*c_seg_size),
+                        c_seg_size);
+    recipe_entry->seg_num = i; 
+    filerecipe_add_entry( recipe, recipe_entry); 
+    fingerprint_print(&recipe_entry->fingerprint);
+    
+     
+    container_add_seg(lfs_info->buf_container, (char*)buf + i*c_seg_size); 
     seg_cnt--;
     i++; 
-    namespace_record_t *item; 
-    HASH_FIND(hh, name_space, &fp, sizeof(fingerprint_t), item);
-    if(item != NULL) {                             //if segment exists
+    namespace_record_t item; 
+    //HASH_ADD(hh, lfs_info->lfs_namespace, &fp, sizeof(fingerprint_t), item);
+    //if(item != NULL) {                             //if segment exists
     //uint32_t container_id = item->container_id;    
-      recipe_set_fingerprint( inode->file_recipe, 
-                              recipe_seg_index, &fp);
-      recipe_seg_index++; 
-    } else {
-    }   
+    //  recipe_set_fingerprint( inode->file_recipe, 
+    //                           recipe_seg_index, &fp);
+    //  recipe_seg_index++; 
+    //} else {
+    // }   
   }
-*/ 
-  return 0; 
+  
+  print_filerecipe(recipe); 
+  
+  for (i = 0; i < MAX_INODE_NUM; i++) {
+    if (lfs_info->imap->records[i].inode_id == inode.inode_id) {
+      lfs_info->imap->records[i].inode_addr = 
+          lfs_info->buf_container->header->container_id * c_container_size
+          + lfs_info->buf_container->seg_offset * c_seg_size + c_blk_size;
+      printf("lfs_write: new inode addr is %x\n", 
+        lfs_info->imap->records[i].inode_addr); 
+          break;
+    }
+  }
+  inode.file_size = size; 
+  container_add_seg(lfs_info->buf_container, (char*)&inode);
+  print_inodemap(lfs_info->imap); 
+  return size; 
 }
 
 
@@ -256,8 +310,9 @@ void lfs_init() {
   lfs_info->cur_container = container_init();
   lfs_info->cur_container->header->container_id = 0; 
   lfs_info->buf_container = container_init();
-  lfs_info->buf_container->header->container_id = 0;   
-  
+  lfs_info->buf_container->header->container_id = 0; 
+  //allocate memory for namespace  
+  lfs_info->lfs_namespace = malloc(sizeof(namespace_record_t) * 1024); 
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);
   
