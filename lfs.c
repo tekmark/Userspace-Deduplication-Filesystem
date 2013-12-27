@@ -211,7 +211,25 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
   printf("lfs_read: calculate file recipe cid : %u, seg offset :%u\n", 
          cid, seg_offset);
   file_recipe_t *file_recipe = lfs_info->buf_container->buf + seg_offset * c_seg_size;
-  print_filerecipe(file_recipe); 
+  print_filerecipe(file_recipe);
+  namespace_record_t record;
+  namespace_record_t *result; 
+  memcpy( &record.fp, &file_recipe->records[0].fingerprint, sizeof( fingerprint_t) ); 
+  
+  int index = 0;
+  for( index = 0; index != FINGERPRINT_SIZE; index++) {  
+    printf("%x*", record.fp.fingerprint[index]);
+  }
+  printf("\n");
+
+  HASH_FIND(hh, lfs_info->lfs_namespace, &record.fp, sizeof(fingerprint_t), result);
+  uint32_t cnt = HASH_CNT(hh, lfs_info->lfs_namespace);
+  printf("hash table size; %u\n", cnt); 
+  if( result == NULL ) {
+    printf("cannot find fingerprint in namespace\n"); 
+  } else {
+    printf("find fingerprint in namespace\n"); 
+  }
   
   return 0; 
 }
@@ -253,9 +271,19 @@ static int lfs_write(const char *path, const char *buf, size_t size,
      
     container_add_seg(lfs_info->buf_container, (char*)buf + i*c_seg_size); 
     seg_cnt--;
-    i++; 
-    namespace_record_t item; 
-    //HASH_ADD(hh, lfs_info->lfs_namespace, &fp, sizeof(fingerprint_t), item);
+    i++;
+    //add fingerprint to hash table;
+    namespace_record_t *item = (namespace_record_t*)malloc(sizeof(namespace_record_t));
+    memset( item, 0, sizeof(namespace_record_t) ); 
+    memcpy( item->fp.fingerprint, recipe_entry->fingerprint.fingerprint, sizeof(fingerprint_t) );
+    int index = 0; 
+    for( index = 0; index != FINGERPRINT_SIZE; index++) { 
+      printf("%x*", item->fp.fingerprint[index]); 
+    }
+    printf("\n"); 
+   
+    item->container_id = lfs_info->buf_container->header->container_id;  
+    HASH_ADD(hh, lfs_info->lfs_namespace, fp, sizeof(fingerprint_t), item);
     //if(item != NULL) {                             //if segment exists
     //uint32_t container_id = item->container_id;    
     //  recipe_set_fingerprint( inode->file_recipe, 
@@ -266,7 +294,8 @@ static int lfs_write(const char *path, const char *buf, size_t size,
   }
   
   print_filerecipe(recipe); 
-  
+  uint32_t table_size = HASH_CNT(hh, lfs_info->lfs_namespace);
+  printf(" lfs_write: hash table size %u\n", table_size); 
   for (i = 0; i < MAX_INODE_NUM; i++) {
     if (lfs_info->imap->records[i].inode_id == inode.inode_id) {
       lfs_info->imap->records[i].inode_addr = 
@@ -312,7 +341,7 @@ void lfs_init() {
   lfs_info->buf_container = container_init();
   lfs_info->buf_container->header->container_id = 0; 
   //allocate memory for namespace  
-  lfs_info->lfs_namespace = malloc(sizeof(namespace_record_t) * 1024); 
+  lfs_info->lfs_namespace = NULL; 
   lfs_info->fd = open("./lfslog", O_RDWR|O_CREAT|O_TRUNC);
   assert(lfs_info->fd>0);
   

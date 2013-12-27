@@ -18,7 +18,7 @@ typedef struct {
   UT_hash_handle hh;
 } namespace_record_t;
 
-namespace_record_t *lfs_namespace;
+//namespace_record_t *lfs_namespace;
 
 typedef struct {
   inode_map_t *imap;
