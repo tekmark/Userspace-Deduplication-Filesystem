@@ -3,8 +3,8 @@
 
 const uint32_t c_blk_size = 4096;                 //block size is 4K
 const uint32_t c_seg_size = 4096;           //segment equals block size
-const uint32_t c_container_blk_num = 8;
-const uint32_t c_container_seg_num = 8;
+const uint32_t c_container_blk_num = 1024;
+const uint32_t c_container_seg_num = 1024;
 const uint32_t c_container_size = 4096 * 1024;
 const uint32_t c_max_container_num = 1024;
 

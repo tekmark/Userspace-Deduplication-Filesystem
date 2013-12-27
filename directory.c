@@ -82,7 +82,7 @@ dir_t *open_cur_dir(){
     ret_dir->records = (dir_record_t *)dir_data_buf;
     int cnt =0;
     // calculate the counts of records in dir data
-    for (i = 0; i < c_container_blk_num * c_blk_size / sizeof(dir_record_t); i++) {
+    for (i = 0; i < blk_num * c_blk_size / sizeof(dir_record_t); i++) {
 	if (strlen(ret_dir->records[i].filename) >0) {
         printf("filename %s\n", ret_dir->records[i].filename); 
 	    cnt++;
