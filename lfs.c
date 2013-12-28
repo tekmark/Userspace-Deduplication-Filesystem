@@ -30,7 +30,11 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
     // when initializing the system, path = "/", get inode of root directory
     // when "mkdir aaa", path = "/aaa", get inode of the directory aaa
     // when "touch bbb", path = "/bbb", get inode of the file bbb
-    int ret = dir_get_inode( path, &inode);
+    int32_t ret = dir_get_inode( path, &inode);
+    if( ret != 0 ) {
+      printf("lfs_getattr: dir_get_inode cannot find inode\n");
+      return -ENOENT;  
+    } 
     printf ("****************DEBUG***************************\n");
     printf ("ret = %u, path = %s, inode->inode_id= %u\n", ret, path, 
         inode.inode_id);
@@ -182,11 +186,11 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     //                  + c_blk_size + c_blk_size;
     printf("lfs_create: file_recipe addr %x\n", new_inode->file_recipe); 
     container_add_seg (lfs_info->buf_container, (void*)new_inode);
-    file_recipe_t *file_recipe = malloc( c_seg_size );
+    //file_recipe_t *file_recipe = malloc( c_seg_size );
     //memset( file_recipe, 0 , c_seg_size); 
     //container_add_seg (lfs_info->buf_container, (void*)file_recipe); 
     free (new_inode);
-    free (file_recipe); 
+    //free (file_recipe); 
   }
   
   return 0; 

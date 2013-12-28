@@ -192,14 +192,15 @@ int32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
         container_add_seg (lfs_info->buf_container, dir_data_seg_buf);
     }
     // 3. add inode segment to buf container
-    char *inode_seg_buf = malloc (c_seg_size);
-    memset ((void *)inode_seg_buf, 0, c_seg_size);
-    memcpy (inode_seg_buf, (char *)inode, sizeof(inode_t));
+    //char *inode_seg_buf = malloc (c_seg_size);
+    //memset ((void *)inode_seg_buf, 0, c_seg_size);
+    //memcpy (inode_seg_buf, (char *)inode, sizeof(inode_t));
+    
     // calculate the new address of dir inode
     uint32_t inode_new_addr = c_blk_size +
         c_container_size * lfs_info->buf_container->header->container_id +
         lfs_info->buf_container->seg_offset * c_seg_size;
-    container_add_seg (lfs_info->buf_container, inode_seg_buf); 
+    container_add_seg (lfs_info->buf_container, (char*) inode); 
     
     uint32_t flag  = 0;
     // modify the dir inode entry in inode_map 
@@ -232,7 +233,7 @@ int32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
     /*for( index = 0; index < c_container_size; index++){
       printf("%c", *(lfs_info->cur_container->buf+index)); 
     }*/
-    free (inode_seg_buf);
+    //free (inode_seg_buf);
     free (dir_data_seg_buf);
     ret = 0;
     return ret;
@@ -340,7 +341,7 @@ int32_t get_inode_from_inode_id (inode_t* inode, uint32_t inode_id) {
     }
 
     // calculate container id and segment offset from the inode address
-    uint32_t cid = inode_addr / c_container_size;
+    uint32_t cid = (inode_addr-c_blk_size) / c_container_size;
     uint32_t seg_offset = (inode_addr-c_blk_size) % c_container_size / c_blk_size;
     printf("get_inode_from_inode_id: cid %u, seg_offset %u \n", cid, seg_offset); 
     // if cid not equal to current id, fetch container from disk
