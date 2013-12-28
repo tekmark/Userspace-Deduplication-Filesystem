@@ -3,6 +3,7 @@
 
 #include<time.h>
 #include<sys/types.h>
+#include<string.h>
 #include<fuse.h>
 #include"util.h"
 
@@ -56,6 +57,8 @@ typedef struct {
   inode_map_record_t records[MAX_INODE_NUM]; 
 } inode_map_t; 
 
-void print_inodemap( inode_map_t * inodemap); 
+void print_inodemap( inode_map_t * inodemap);
+void print_filerecipe( file_recipe_t *); 
 void root_inode_init(inode_t *); 
+uint32_t filerecipe_add_entry( file_recipe_t *, file_recipe_record_t *); 
 #endif

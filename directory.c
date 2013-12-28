@@ -1,14 +1,13 @@
 #include "directory.h"
 
 // get the inode of a path
-uint32_t dir_get_inode(const char *path, inode_t * inode){
+int32_t dir_get_inode(const char *path, inode_t * inode){
     // get current directory data
     dir_t * cur_dir = open_cur_dir();
     print_dir_data (cur_dir);
     uint32_t inode_id = 0;
     uint32_t ret;
     // get inode_id based on current filename
-    printf ("++++++++++++++++++dir_get_inode, input path is %s\n", path);
     ret = get_inode_id_from_filename ((char *)path, cur_dir, &inode_id);
     if (ret == FAIL) {
         printf ("get_inode_id_From_filename: return false, no such inode\n");
@@ -55,7 +54,7 @@ dir_t *open_cur_dir(){
         // fetch the address of dir data segment from direct block of inode
 	    dir_data_addr = lfs_info->cur_inode->direct_blk[i];
         
-        printf("open_cur_dir(): dir data seg #%u, addr:%x\n",i, dir_data_addr); 
+        printf("open_cur_dir: dir data seg #%u, addr:%x\n",i, dir_data_addr); 
         
         // calculate container id of required dir data segment
         uint32_t cid = (dir_data_addr - c_blk_size) / c_container_size;
@@ -69,7 +68,9 @@ dir_t *open_cur_dir(){
           printf("open_cur_dir: read data from buf container\n"); 
           memcpy( dir_data_buf + i * c_blk_size, 
                   lfs_info->buf_container->buf + seg_offset * c_blk_size, c_blk_size ); 
-        } else if (cid != lfs_info->cur_container->header->container_id) {
+        } else if (cid != lfs_info->cur_container->header->container_id || (
+                     lfs_info->cur_container->header->container_id == 0 && 
+                       lfs_info->cur_container->seg_offset != c_container_blk_num) ) {       //
 	      container_read (lfs_info->cur_container, cid);
           printf("open_cur_dir: required container is in disk, load it to mem\n"); 
           memcpy (dir_data_buf + i * c_blk_size, 
@@ -103,7 +104,7 @@ dir_t *open_parent_dir(){
 // dir: current directory data
 // filename: filename to be added to the directory data
 // inode_id: inode id of the filename to be added to the directory data
-uint32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
+int32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
     uint32_t index;
     uint32_t flag = SUCCESS;
     // compare filename with existed filenames in the directory data
@@ -128,9 +129,21 @@ uint32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
     return flag;
 }
 
+int32_t dir_change_entry( dir_t *dir, const char* old_filename, const char* new_filename) {
+  uint32_t index = 0; 
+  for( index = 0; index < dir->num; index++) {
+    if( strcmp(dir->records[index].filename, old_filename) == 0 ) {
+       strcpy( dir->records[index].filename, new_filename);
+       return 0; 
+    }
+  }
+  return -1; 
+}
+
+
 // write changes of directory data, along with its directory inode
 // to the container, and modify inode_map
-uint32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
+int32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
 
     uint32_t i, j, ret;
     if (dir == NULL || inode == NULL) {
@@ -179,14 +192,15 @@ uint32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
         container_add_seg (lfs_info->buf_container, dir_data_seg_buf);
     }
     // 3. add inode segment to buf container
-    char *inode_seg_buf = malloc (c_seg_size);
-    memset ((void *)inode_seg_buf, 0, c_seg_size);
-    memcpy (inode_seg_buf, (char *)inode, sizeof(inode_t));
+    //char *inode_seg_buf = malloc (c_seg_size);
+    //memset ((void *)inode_seg_buf, 0, c_seg_size);
+    //memcpy (inode_seg_buf, (char *)inode, sizeof(inode_t));
+    
     // calculate the new address of dir inode
     uint32_t inode_new_addr = c_blk_size +
         c_container_size * lfs_info->buf_container->header->container_id +
         lfs_info->buf_container->seg_offset * c_seg_size;
-    container_add_seg (lfs_info->buf_container, inode_seg_buf); 
+    container_add_seg (lfs_info->buf_container, (char*) inode); 
     
     uint32_t flag  = 0;
     // modify the dir inode entry in inode_map 
@@ -219,20 +233,23 @@ uint32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
     /*for( index = 0; index < c_container_size; index++){
       printf("%c", *(lfs_info->cur_container->buf+index)); 
     }*/
-    free (inode_seg_buf);
+    //free (inode_seg_buf);
     free (dir_data_seg_buf);
     ret = 0;
     return ret;
 }
 
 // remove an entry in directory
-uint32_t dir_remove_entry( dir_t *dir, const char* filename) {
+int32_t dir_remove_entry( dir_t *dir, const char* filename) {
     uint32_t index;
     uint32_t entry_index;
     uint32_t flag = FAIL;
     // try to find the entry in the dir records
     for (index = 0; index < dir->num; index++) {
-        if (strcmp (dir->records[index].filename, filename) == 0) {
+        if ( strcmp (dir->records[index].filename, filename) == 0) {
+            printf("dir_remove_entry: find entry in dir data, entry#: %u\n", index);
+            memset( dir->records[index].filename, 0, MAX_FILENAME_LEN);
+            dir->records[index].inode_id = 0; 
             entry_index = index;
             flag = SUCCESS;
         }
@@ -245,42 +262,15 @@ uint32_t dir_remove_entry( dir_t *dir, const char* filename) {
     
     // shift entries after the removed entry to the left
     for (index = entry_index; index < dir->num - 1; index++) {
-        strcpy(dir->records[index].filename,dir->records[index+1].filename);
+        strcpy(dir->records[index].filename, dir->records[index+1].filename);
         dir->records[index].inode_id = dir->records[index+1].inode_id;
     }
     dir->num--;
     return flag;
 }
 
-/*******************
-char* get_parentpath(const char *path)
- {
-          if (!strcmp ((char *)path, "/"))
-              return (char *)path;
-  
-      char *p_end = (char *)path;
-          int length = 0;
-          char *parent_path;
-  
-      while(*p_end != '\0') {
-                  length++;
-          p_end++;
-      }   
-  
-      while(*p_end != '/') {
-                  length--;
-          p_end--;
-      }   
-      printf ("length == %u\n", length);
-        parent_path = (char *)malloc (length);
-        memset (parent_path, 0, length);
-        memcpy (parent_path, path, length);
-          return parent_path;
-  }
-**************/
-
 // obtain inode id from the file name
-uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
+int32_t get_inode_id_from_filename (const char *fname, dir_t * dir_data,
                                      uint32_t *pinode_id) {
     uint32_t flag = FAIL;
     uint32_t index;
@@ -309,7 +299,7 @@ uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
 }
 
 // get inode from inode id by looking up in the inode map
-uint32_t get_inode_from_inode_id (inode_t* inode, uint32_t inode_id) {
+int32_t get_inode_from_inode_id (inode_t* inode, uint32_t inode_id) {
     printf("**********get_inode_from_inode_id(); enter****************\n");
     printf("get_inode_from_inode_id: inode_id %u\n", inode_id); 
     uint32_t index;
@@ -332,7 +322,7 @@ uint32_t get_inode_from_inode_id (inode_t* inode, uint32_t inode_id) {
     }
 
     // calculate container id and segment offset from the inode address
-    uint32_t cid = inode_addr / c_container_size;
+    uint32_t cid = (inode_addr-c_blk_size) / c_container_size;
     uint32_t seg_offset = (inode_addr-c_blk_size) % c_container_size / c_blk_size;
     printf("get_inode_from_inode_id: cid %u, seg_offset %u \n", cid, seg_offset); 
     // if cid not equal to current id, fetch container from disk
