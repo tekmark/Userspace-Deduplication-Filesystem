@@ -29,7 +29,7 @@ typedef struct {
   container_t *cur_container;
   container_t *buf_container; 
   
-  uint32_t cur_container_id;  
+  uint32_t next_container_id;  
   inode_t *cur_inode; 
    
   uint32_t fd;

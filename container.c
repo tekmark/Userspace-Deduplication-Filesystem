@@ -3,9 +3,9 @@
 
 const uint32_t c_blk_size = 4096;                 //block size is 4K
 const uint32_t c_seg_size = 4096;           //segment equals block size
-const uint32_t c_container_blk_num = 1024;
-const uint32_t c_container_seg_num = 1024;
-const uint32_t c_container_size = 4096 * 1024;
+const uint32_t c_container_blk_num = 8;
+const uint32_t c_container_seg_num = 8;
+const uint32_t c_container_size = 4096 * 8;
 const uint32_t c_max_container_num = 1024;
 
 
@@ -39,17 +39,30 @@ uint32_t container_copy(container_t *dst_container, container_t *src_container){
 
 //write container into disk 
 uint32_t container_write( container_t *container, uint32_t *new_id) {
+  assert(container); 
   uint32_t container_id = container->header->container_id;
-  uint32_t addr = container_id * c_container_size + c_blk_size;  
-  pwrite( lfs_info->fd, container->buf, c_container_size, addr);
+  uint32_t addr = container_id * c_container_size + c_blk_size; 
+  int32_t ret = 0; 
+  ret = pwrite( lfs_info->fd, container->buf, c_container_size, addr);
+  printf("container_write: write container_size = %x container id = %u to addr: %x\n", 
+          c_container_size, container_id, addr); 
+  printf("container_write: write %u bytes to disk\n", ret); 
   return container_id;  
 }
 
 //read a container from disk 
 uint32_t container_read(container_t *container, uint32_t container_id) { 
   //calculate target container address
-  uint32_t addr = container_id * c_container_size + c_blk_size; 
+  uint32_t addr = container_id * c_container_size + c_blk_size;
+  printf("container_read: read container id %u, addr: %x\n", container_id, addr ); 
   pread(lfs_info->fd, container->buf, c_container_size, addr);
+  printf("container_read: get container %u from disk\n", (uint32_t)container->header->container_id);
+  container_print_header( container ); 
+  int x = 0; 
+  for( x = 0; x != c_container_size; x++) {
+    printf("%c", container->buf[x]); 
+  }
+  printf("\n"); 
   container->seg_offset = c_container_blk_num;  //container is full
   return 0; 
 }
@@ -70,6 +83,16 @@ uint32_t container_add_seg( container_t *container, char *seg_buf) {
     memcpy( container->buf + container->seg_offset * c_seg_size, 
             seg_buf, c_seg_size); 
     container->seg_offset += 1;
+    if( container->seg_offset == c_container_seg_num ) {
+      printf("container_add_seg: container is full, write to disk\n");
+      container_print_header(container); 
+      lfs_info->next_container_id = container_write( container, NULL) + 1;
+      printf("container_add_seg: next container id = %u\n", lfs_info->next_container_id); 
+      //memset(container, 0, sizeof(container_t)); 
+      memset(container->buf, 0, c_container_size);
+      container->header->container_id = lfs_info->next_container_id;
+      container->seg_offset = 1; 
+    }
     return  0; 
   }
 }

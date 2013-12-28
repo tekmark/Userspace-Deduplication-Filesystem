@@ -54,7 +54,7 @@ dir_t *open_cur_dir(){
         // fetch the address of dir data segment from direct block of inode
 	    dir_data_addr = lfs_info->cur_inode->direct_blk[i];
         
-        printf("open_cur_dir(): dir data seg #%u, addr:%x\n",i, dir_data_addr); 
+        printf("open_cur_dir: dir data seg #%u, addr:%x\n",i, dir_data_addr); 
         
         // calculate container id of required dir data segment
         uint32_t cid = (dir_data_addr - c_blk_size) / c_container_size;
@@ -68,11 +68,17 @@ dir_t *open_cur_dir(){
           printf("open_cur_dir: read data from buf container\n"); 
           memcpy( dir_data_buf + i * c_blk_size, 
                   lfs_info->buf_container->buf + seg_offset * c_blk_size, c_blk_size ); 
-        } else if (cid != lfs_info->cur_container->header->container_id) {
+        } else if (cid != lfs_info->cur_container->header->container_id ||
+                  lfs_info->cur_container->header->container_id == 0) {       //
 	      container_read (lfs_info->cur_container, cid);
           printf("open_cur_dir: required container is in disk, load it to mem\n"); 
           memcpy (dir_data_buf + i * c_blk_size, 
                   lfs_info->cur_container->buf + seg_offset * c_blk_size, c_blk_size );
+          int x = 0; 
+          for( x = 0 ; x != c_seg_size; x++) { 
+            printf("%c", dir_data_buf[x]); 
+          }
+          printf("\n"); 
         } else {                                 //if target blk is in cur container
            memcpy (dir_data_buf + i * c_blk_size, 
                   lfs_info->cur_container->buf + seg_offset * c_blk_size, c_blk_size );

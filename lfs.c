@@ -230,6 +230,7 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
      printf("lfs_read: find file recipe in cur container\n"); 
      file_recipe = (file_recipe_t*)(lfs_info->cur_container->buf + seg_offset * c_seg_size);
   } else {
+     printf("lfs_read: read container from disk\n"); 
      container_read(lfs_info->cur_container, cid);
      file_recipe = (file_recipe_t*)(lfs_info->cur_container->buf + seg_offset * c_seg_size);
   }
@@ -247,11 +248,26 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
       return strlen(buf);                                                   //error; 
     } else {                                                      
       printf("lfs_read: find fingerprint in namespace, container_id = %u\n", result->container_id);
-      uint32_t seg_num = 
-          container_header_find_fingerprint(lfs_info->buf_container, &record.fp);
-      container_print_header( lfs_info->buf_container); 
-      printf("find seg offset in container header%u\n", seg_num); 
-      memcpy(buf + index*c_blk_size, lfs_info->buf_container->buf + seg_num * c_blk_size, c_blk_size);
+      uint32_t seg_num = 0; 
+      if( result->container_id == lfs_info->buf_container->header->container_id ) {
+        
+        seg_num = container_header_find_fingerprint(lfs_info->buf_container, &record.fp);
+        container_print_header( lfs_info->buf_container);
+        memcpy(buf + index*c_blk_size, lfs_info->buf_container->buf + seg_num * c_blk_size, c_blk_size);
+
+      } else if ( result->container_id == lfs_info->cur_container->header->container_id) {
+        seg_num = container_header_find_fingerprint(lfs_info->cur_container, &record.fp);
+        container_print_header( lfs_info->cur_container);
+        memcpy(buf + index*c_blk_size, lfs_info->cur_container->buf + seg_num * c_blk_size, c_blk_size);
+
+      } else {
+        container_read(lfs_info->cur_container, result->container_id);
+        seg_num = container_header_find_fingerprint(lfs_info->cur_container, &record.fp);
+        container_print_header( lfs_info->cur_container);
+        memcpy(buf + index*c_blk_size, lfs_info->cur_container->buf + seg_num * c_blk_size, c_blk_size);
+
+      }
+      printf("find seg offset in container header: %u\n", seg_num); 
       printf("lsf_read: buf size : %u\n", strlen(buf)); 
     }
   }
