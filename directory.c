@@ -233,7 +233,10 @@ uint32_t dir_remove_entry( dir_t *dir, const char* filename) {
     uint32_t flag = FAIL;
     // try to find the entry in the dir records
     for (index = 0; index < dir->num; index++) {
-        if (strcmp (dir->records[index].filename, filename) == 0) {
+        if ( strcmp (dir->records[index].filename, filename) == 0) {
+            printf("dir_remove_entry: find entry in dir data, entry#: %u\n", index);
+            memset( dir->records[index].filename, 0, MAX_FILENAME_LEN);
+            dir->records[index].inode_id = 0; 
             entry_index = index;
             flag = SUCCESS;
         }
@@ -246,7 +249,7 @@ uint32_t dir_remove_entry( dir_t *dir, const char* filename) {
     
     // shift entries after the removed entry to the left
     for (index = entry_index; index < dir->num - 1; index++) {
-        strcpy(dir->records[index].filename,dir->records[index+1].filename);
+        strcpy(dir->records[index].filename, dir->records[index+1].filename);
         dir->records[index].inode_id = dir->records[index+1].inode_id;
     }
     dir->num--;
@@ -280,7 +283,7 @@ char* get_parentpath(const char *path)
 }
 
 // obtain inode id from the file name
-uint32_t get_inode_id_from_filename (char *fname, dir_t * dir_data,
+uint32_t get_inode_id_from_filename (const char *fname, dir_t * dir_data,
                                      uint32_t *pinode_id) {
     uint32_t flag = FAIL;
     uint32_t index;

@@ -269,7 +269,7 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
 
       }
       printf("find seg offset in container header: %u\n", seg_num); 
-      printf("lsf_read: buf size : %u\n", strlen(buf)); 
+      printf("lsf_read: buf size : %u\n", (uint32_t)strlen(buf)); 
     }
   }
   return strlen(buf); 
@@ -280,7 +280,7 @@ static int lfs_write(const char *path, const char *buf, size_t size,
 
   printf("lfs_write: enter, default para: size=%u, offset=%u\n", 
                             (uint32_t)size, (uint32_t)offset);
-  printf("lfs_write: buffer data to write %s, size: %u\n", buf, size);
+  printf("lfs_write: buffer data to write %s, size: %u\n", buf, (uint32_t)size);
   printf("lfs_write: path to write %s\n", path); 
   
   int ret = 0; 
@@ -400,6 +400,39 @@ static int lfs_write(const char *path, const char *buf, size_t size,
 }
 
 
+static int lfs_unlink(const char* path){
+  printf("lfs_unlink(remove): enter\n");
+  const char* filename = get_filename( path );
+  printf("lfs_unlink: rm %s\n", filename);
+  dir_t *cur_dir = open_cur_dir();
+  int32_t ret = 0; 
+  uint32_t inode_id = 0; 
+  ret = get_inode_id_from_filename( filename, cur_dir, &inode_id); 
+  if( ret != 0 ) {
+     return -ENOENT; 
+  } 
+  printf("lfs_unlink: remove inode id %u\n", inode_id); 
+  ret = dir_remove_entry(cur_dir, filename); 
+  if( ret != 0 ) {
+     return -ENOENT; 
+  }
+  uint32_t i;
+  for( i = 0; i != lfs_info->n_inode; i++) {
+    if(lfs_info->imap->records[i].inode_id  == inode_id) {
+      lfs_info->imap->records[i].inode_id = 0; 
+      lfs_info->imap->records[i].inode_addr = 0; 
+    } 
+  }
+  printf("lfs_unlink: print dir data\n"); 
+  print_dir_data(cur_dir);
+  //container_add_seg(lfs_info->buf_container, (char*)cur_dir->records); 
+  dir_commit_changes(cur_dir, lfs_info->cur_inode);
+  print_inodemap( lfs_info->imap); 
+  
+  return 0; 
+}
+
+
 
 
 static struct fuse_operations lfs_oper = {
@@ -410,6 +443,7 @@ static struct fuse_operations lfs_oper = {
     .read       = lfs_read,
     .write      = lfs_write,
     .create     = lfs_create,
+    .unlink     = lfs_unlink,
 };
 
 
