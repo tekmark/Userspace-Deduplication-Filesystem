@@ -1,7 +1,7 @@
 #include "directory.h"
 
 // get the inode of a path
-uint32_t dir_get_inode(const char *path, inode_t * inode){
+int32_t dir_get_inode(const char *path, inode_t * inode){
     // get current directory data
     dir_t * cur_dir = open_cur_dir();
     print_dir_data (cur_dir);
@@ -104,7 +104,7 @@ dir_t *open_parent_dir(){
 // dir: current directory data
 // filename: filename to be added to the directory data
 // inode_id: inode id of the filename to be added to the directory data
-uint32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
+int32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
     uint32_t index;
     uint32_t flag = SUCCESS;
     // compare filename with existed filenames in the directory data
@@ -129,9 +129,21 @@ uint32_t dir_add_entry( dir_t *dir, const char* filename, uint32_t inode_id) {
     return flag;
 }
 
+int32_t dir_change_entry( dir_t *dir, const char* old_filename, const char* new_filename) {
+  uint32_t index = 0; 
+  for( index = 0; index < dir->num; index++) {
+    if( strcmp(dir->records[index].filename, old_filename) == 0 ) {
+       strcpy( dir->records[index].filename, new_filename);
+       return 0; 
+    }
+  }
+  return -1; 
+}
+
+
 // write changes of directory data, along with its directory inode
 // to the container, and modify inode_map
-uint32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
+int32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
 
     uint32_t i, j, ret;
     if (dir == NULL || inode == NULL) {
@@ -227,7 +239,7 @@ uint32_t dir_commit_changes(dir_t *dir, inode_t *inode) {
 }
 
 // remove an entry in directory
-uint32_t dir_remove_entry( dir_t *dir, const char* filename) {
+int32_t dir_remove_entry( dir_t *dir, const char* filename) {
     uint32_t index;
     uint32_t entry_index;
     uint32_t flag = FAIL;
@@ -283,7 +295,7 @@ char* get_parentpath(const char *path)
 }
 
 // obtain inode id from the file name
-uint32_t get_inode_id_from_filename (const char *fname, dir_t * dir_data,
+int32_t get_inode_id_from_filename (const char *fname, dir_t * dir_data,
                                      uint32_t *pinode_id) {
     uint32_t flag = FAIL;
     uint32_t index;
@@ -305,7 +317,7 @@ uint32_t get_inode_id_from_filename (const char *fname, dir_t * dir_data,
 }
 
 // get inode from inode id by looking up in the inode map
-uint32_t get_inode_from_inode_id (inode_t* inode, uint32_t inode_id) {
+int32_t get_inode_from_inode_id (inode_t* inode, uint32_t inode_id) {
     printf("**********get_inode_from_inode_id(); enter****************\n");
     printf("get_inode_from_inode_id: inode_id %u\n", inode_id); 
     uint32_t index;

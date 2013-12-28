@@ -15,6 +15,6 @@ typedef struct {
 uint8_t* compute_fingerprint(fingerprint_t *fp, uint8_t *buf, uint32_t size);
 void fingerprint_print(fingerprint_t *fp); 
 const char * get_filename(const char*path); 
-uint32_t get_division_result (uint32_t dividend, uint32_t divisor);
+int32_t get_division_result (uint32_t dividend, uint32_t divisor);
 
 #endif

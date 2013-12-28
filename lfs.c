@@ -399,6 +399,21 @@ static int lfs_write(const char *path, const char *buf, size_t size,
   return size; 
 }
 
+static int lfs_rename(const char* old_path, const char* new_path) {
+  printf("lfs_rename: enter\n");
+  printf("lfs_rename: new name: %s, old name %s\n", new_path, old_path);
+  const char *new_filename = get_filename(new_path);
+  const char *old_filename = get_filename(old_path);
+  dir_t *cur_dir = open_cur_dir(); 
+  int32_t ret = 0; 
+  ret = dir_change_entry( cur_dir, old_filename, new_filename);
+  if(ret != 0) {
+    return -ENOENT; 
+  }
+  print_dir_data( cur_dir); 
+  dir_commit_changes(cur_dir, lfs_info->cur_inode); 
+  return 0; 
+}
 
 static int lfs_unlink(const char* path){
   printf("lfs_unlink(remove): enter\n");
@@ -433,6 +448,10 @@ static int lfs_unlink(const char* path){
 }
 
 
+static int lfs_rmdir(const char * path){
+  printf("lfs_rmdir: enter\n"); 
+  return 0; 
+} 
 
 
 static struct fuse_operations lfs_oper = {
@@ -444,6 +463,8 @@ static struct fuse_operations lfs_oper = {
     .write      = lfs_write,
     .create     = lfs_create,
     .unlink     = lfs_unlink,
+    .rmdir      = lfs_rmdir,
+    .rename     = lfs_rename,
 };
 
 
