@@ -390,17 +390,17 @@ static int lfs_write(const char *path, const char *buf, size_t size,
   //name space entry
   namespace_record_t *item = (namespace_record_t*)malloc(sizeof(namespace_record_t));
   uint32_t i = 0; 
-  uint32_t seg_cnt = size/c_seg_size + 1;
+  uint32_t seg_cnt = 1 ; //size/c_seg_size;
   while( seg_cnt != 0) {
     //compute fingerprint of $4KB
     compute_fingerprint(&recipe_entry->fingerprint, (uint8_t*)(buf + i*c_seg_size),
                         c_seg_size);
-    recipe_entry->seg_num = i;
+    recipe_entry->seg_num = offset/c_blk_size;
     //add entry to file recipe
     filerecipe_add_entry( recipe, recipe_entry); 
     
     //add fingerprint to container header
-    container_header_add_fingerprint(lfs_info->buf_container, header_record); 
+    //container_header_add_fingerprint(lfs_info->buf_container, header_record); 
     
     fingerprint_print(&recipe_entry->fingerprint);
     
@@ -416,7 +416,7 @@ static int lfs_write(const char *path, const char *buf, size_t size,
       //add fingerprint to container header
       container_header_add_fingerprint(lfs_info->buf_container, header_record);
  
-      fingerprint_print(&recipe_entry->fingerprint);
+      //fingerprint_print(&recipe_entry->fingerprint);
       //add fingerprint to namespace;
       memset( item, 0, sizeof(namespace_record_t) ); 
       memcpy( item->fp.fingerprint, recipe_entry->fingerprint.fingerprint, sizeof(fingerprint_t) );
