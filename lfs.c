@@ -60,7 +60,7 @@ static int lfs_mkdir(const char *path, mode_t mode){
   inode_t *new_dir = malloc(sizeof(inode_t)); 
   // TODO: inode_id should be equal to lfs_info->n_inode
   new_dir->inode_id = lfs_info->n_inode;
-  new_dir->inode_type = DIRECTORY;
+  //new_dir->inode_type = DIRECTORY;
   time(&new_dir->ctime);
   time(&new_dir->mtime); 
   new_dir->file_size = 0x1000;
@@ -142,7 +142,7 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     lfs_info->n_inode++;
 
     new_inode->inode_id = lfs_info->n_inode;
-    new_inode->inode_type = REGULAR_FILE;
+    //new_inode->inode_type = REGULAR_FILE;
     new_inode->file_size = 0; 
     new_inode->link = 1; 
     new_inode->owner = 1;
@@ -320,27 +320,38 @@ static int lfs_write(const char *path, const char *buf, size_t size,
     //add entry to file recipe
     filerecipe_add_entry( recipe, recipe_entry); 
     
-    //header fingerprint entry;
-    memset(header_record, 0, sizeof(fingerprint_seg_record_t) ); 
-    memcpy(header_record->fp.fingerprint, recipe_entry->fingerprint.fingerprint, FINGERPRINT_SIZE);
-    header_record->seg = lfs_info->buf_container->seg_offset;
-    printf("lfs_write: fingerprint header seg_offset %u\n", header_record->seg);
     //add fingerprint to container header
     container_header_add_fingerprint(lfs_info->buf_container, header_record); 
     
     fingerprint_print(&recipe_entry->fingerprint);
     
-    //add data to the block 
-    container_add_seg(lfs_info->buf_container, (char*)buf + i*c_seg_size); 
+    namespace_record_t *result; 
+    HASH_FIND(hh, lfs_info->lfs_namespace, &recipe_entry->fingerprint,sizeof(fingerprint_t), result);
+    if( result == NULL ) {
+      printf("lfs_write: no duplicated seg\n");
+      //header fingerprint entry; 
+      memset(header_record, 0, sizeof(fingerprint_seg_record_t) );
+      memcpy(header_record->fp.fingerprint, recipe_entry->fingerprint.fingerprint, FINGERPRINT_SIZE);
+      header_record->seg = lfs_info->buf_container->seg_offset;
+      printf("lfs_write: fingerprint header seg_offset %u\n", header_record->seg);
+      //add fingerprint to container header
+      container_header_add_fingerprint(lfs_info->buf_container, header_record);
+ 
+      fingerprint_print(&recipe_entry->fingerprint);
+      //add fingerprint to namespace;
+      memset( item, 0, sizeof(namespace_record_t) ); 
+      memcpy( item->fp.fingerprint, recipe_entry->fingerprint.fingerprint, sizeof(fingerprint_t) );
+      item->container_id = lfs_info->buf_container->header->container_id;  
+      HASH_ADD(hh, lfs_info->lfs_namespace, fp, sizeof(fingerprint_t), item);
+      //add data to the block 
+      container_add_seg(lfs_info->buf_container, (char*)buf + i*c_seg_size);
+    } else {
+      printf("lfs_write: find seg in disk\n");
+    }
+    
     seg_cnt--;
     i++;
 
-    //add fingerprint to namespace;
-    memset( item, 0, sizeof(namespace_record_t) ); 
-    memcpy( item->fp.fingerprint, recipe_entry->fingerprint.fingerprint, sizeof(fingerprint_t) );
-    item->container_id = lfs_info->buf_container->header->container_id;  
-    HASH_ADD(hh, lfs_info->lfs_namespace, fp, sizeof(fingerprint_t), item);
-    
   }
   
   print_filerecipe(recipe); 

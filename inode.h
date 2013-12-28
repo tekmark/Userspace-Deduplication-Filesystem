@@ -24,7 +24,7 @@ typedef struct {
 
 typedef struct {
   uint32_t inode_id;
-  uint32_t inode_type; 
+  //uint32_t inode_type; 
   uint32_t file_size;        //maximum file size is 4gb
   uint32_t owner;            //uid of owner
   uint32_t mode;             //rwx, file or directory

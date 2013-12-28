@@ -35,7 +35,7 @@ void print_inodemap(inode_map_t * inodemap){
 
 void root_inode_init(inode_t *root) {
   root->inode_id = 1;
-  root->inode_type = DIRECTORY;
+  //root->inode_type = DIRECTORY;
   root->mode = S_IFDIR | 0755; 
   root->file_size = 0x1000;
   time(&root->ctime);
