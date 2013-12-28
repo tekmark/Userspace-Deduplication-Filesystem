@@ -452,8 +452,37 @@ static int lfs_unlink(const char* path){
 }
 
 
+
+//should do rm recursively, much more compliated
 static int lfs_rmdir(const char * path){
-  printf("lfs_rmdir: enter\n"); 
+  printf("lfs_rmdir: enter\n");
+  const char *dir_name = get_filename(path);
+  printf("lfs_rmdir: remove directory %s\n", dir_name); 
+  dir_t *cur_dir = open_cur_dir(); 
+  int32_t ret = 0;
+  uint32_t inode_id = 0;
+  ret = get_inode_id_from_filename( dir_name, cur_dir, &inode_id);
+  if( ret != 0 ) { 
+    return -ENOENT;
+  }
+  printf("lfs_rmdir: remove inode id %u\n", inode_id);
+  
+  ret = dir_remove_entry(cur_dir, dir_name);
+  if( ret != 0 ) {
+     return -ENOENT;
+  }
+  uint32_t i;
+  for( i = 0; i != lfs_info->n_inode; i++) {
+    if(lfs_info->imap->records[i].inode_id  == inode_id) {
+       lfs_info->imap->records[i].inode_id = 0;
+       lfs_info->imap->records[i].inode_addr = 0;
+     }
+  } 
+  printf("lfs_unlink: print dir data\n");
+  print_dir_data(cur_dir);
+  //container_add_seg(lfs_info->buf_container, (char*)cur_dir->records); 
+  dir_commit_changes(cur_dir, lfs_info->cur_inode);
+  print_inodemap( lfs_info->imap);
   return 0; 
 } 
 
