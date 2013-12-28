@@ -171,8 +171,9 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     //memcpy (new_inode_seg, new_inode, sizeof(inode_t));
     // update inode map about the new created file inode
     lfs_info->imap->records[lfs_info->n_inode-1].inode_id = new_inode->inode_id;
-    lfs_info->imap->records[lfs_info->n_inode-1].inode_addr = 
-            c_blk_size + lfs_info->buf_container->seg_offset * c_blk_size ;
+    lfs_info->imap->records[lfs_info->n_inode-1].inode_addr =  c_blk_size
+                       + lfs_info->buf_container->header->container_id * c_container_size
+                       + lfs_info->buf_container->seg_offset * c_blk_size ;
     printf ("&&&&&&&&&&&&&&&&&&&&DEBUGDEBUG *********************\n");
     print_inodemap (lfs_info->imap);
     new_inode->file_recipe = 0; 

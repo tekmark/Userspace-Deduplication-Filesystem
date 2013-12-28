@@ -68,17 +68,13 @@ dir_t *open_cur_dir(){
           printf("open_cur_dir: read data from buf container\n"); 
           memcpy( dir_data_buf + i * c_blk_size, 
                   lfs_info->buf_container->buf + seg_offset * c_blk_size, c_blk_size ); 
-        } else if (cid != lfs_info->cur_container->header->container_id ||
-                  lfs_info->cur_container->header->container_id == 0) {       //
+        } else if (cid != lfs_info->cur_container->header->container_id || (
+                     lfs_info->cur_container->header->container_id == 0 && 
+                       lfs_info->cur_container->seg_offset != c_container_blk_num) ) {       //
 	      container_read (lfs_info->cur_container, cid);
           printf("open_cur_dir: required container is in disk, load it to mem\n"); 
           memcpy (dir_data_buf + i * c_blk_size, 
                   lfs_info->cur_container->buf + seg_offset * c_blk_size, c_blk_size );
-          int x = 0; 
-          for( x = 0 ; x != c_seg_size; x++) { 
-            printf("%c", dir_data_buf[x]); 
-          }
-          printf("\n"); 
         } else {                                 //if target blk is in cur container
            memcpy (dir_data_buf + i * c_blk_size, 
                   lfs_info->cur_container->buf + seg_offset * c_blk_size, c_blk_size );

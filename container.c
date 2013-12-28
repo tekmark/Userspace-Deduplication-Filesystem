@@ -58,11 +58,6 @@ uint32_t container_read(container_t *container, uint32_t container_id) {
   pread(lfs_info->fd, container->buf, c_container_size, addr);
   printf("container_read: get container %u from disk\n", (uint32_t)container->header->container_id);
   container_print_header( container ); 
-  int x = 0; 
-  for( x = 0; x != c_container_size; x++) {
-    printf("%c", container->buf[x]); 
-  }
-  printf("\n"); 
   container->seg_offset = c_container_blk_num;  //container is full
   return 0; 
 }
