@@ -17,6 +17,19 @@ const char * LOGGER_DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
 // const char * LOGGER_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.";
 const char * LOGGER_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%%06u %Z";
 
+//set LOG_RUN_LEVEL. log_level must be one of LOGGER_LEVEL_NAMES
+//returns log level int. see enum in logger.h
+//returns -1, if no such log level name
+int set_log_level_by_name (const char * log_level) {
+    for (int i = 0; i < NUM_OF_LOG_LEVELS; ++i) {
+        if (!strcmp(LOGGER_LEVEL_NAMES[i], log_level)) {
+            LOG_RUN_LEVEL = i;
+            return i;
+        }
+    }
+    return -1;
+}
+
 void logger_helper(int log_level, const char *fmt, va_list ap);
 void logger_debug(const char *fmt, ...) {
     va_list ap;

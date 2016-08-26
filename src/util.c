@@ -1,16 +1,16 @@
 #include"util.h"
 
-uint8_t* compute_fingerprint(fingerprint_t *fp, uint8_t *buf, 
+uint8_t* compute_fingerprint(fingerprint_t *fp, uint8_t *buf,
                          uint32_t size) {
   return SHA1(buf, size, fp->fingerprint);
 }
 
 void fingerprint_print( fingerprint_t *fp ) {
-  uint32_t i = 0; 
+  uint32_t i = 0;
   for( i = 0; i != FINGERPRINT_SIZE; i++) {
     printf("%x ", fp->fingerprint[i]);
   }
-  printf("\n"); 
+  printf("\n");
 }
 
 //get the file name from the path
@@ -64,3 +64,11 @@ char* get_parentpath(const char *path)
     return parent_path;
 }
 
+//helper function: conver string to Uppercases
+void string_toupper(char *str) {
+    int len = strlen(str);
+    for (int i = i; i < len; ++i) {
+        str[i] = toupper(str[i]);
+    }
+    return;
+}
