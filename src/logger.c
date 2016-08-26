@@ -12,20 +12,55 @@ const char* LOGGER_LEVEL_NAMES[] = {
   "FATAL",
 };
 
-void log_debug(const char *fmt) {
-    logger(LOG_LEVEL_DEBUG, fmt);
+const char * LOGGER_DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
+// const char * LOGGER_TIME_FORMAT = LOGGER_DEFAULT_TIME_FORMAT;
+// const char * LOGGER_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.";
+const char * LOGGER_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%%06u %Z";
+
+void logger_helper(int log_level, const char *fmt, va_list ap);
+void logger_debug(const char *fmt, ...) {
+    va_list ap;
+    va_start (ap, fmt);
+    logger_helper(LOG_LEVEL_DEBUG, fmt, ap);
+    va_end(ap);
 }
 
-void log_info();
-void log_warn();
-void log_error();
+void logger_info(const char *fmt, ...) {
+    va_list ap;
+    va_start (ap, fmt);
+    logger_helper(LOG_LEVEL_INFO, fmt, ap);
+    va_end(ap);
+}
+void logger_warn (const char *fmt, ...) {
+    va_list ap;
+    va_start (ap, fmt);
+    logger_helper(LOG_LEVEL_WARN, fmt, ap);
+    va_end(ap);
+};
+void logger_error(const char *fmt, ...) {
+    va_list ap;
+    va_start (ap, fmt);
+    logger_helper(LOG_LEVEL_ERROR, fmt, ap);
+    va_end(ap);
+}
 
-const char * get_log_time_string() {
+size_t get_log_time_string(char * buf, size_t buf_size) {
     struct timeval tv;
+    struct tm nowtm;
+
+    //return current time in timeval struct
     gettimeofday(&tv, NULL);
-    time_t t = tv.tv_sec;
-    return ctime(&t);
+    time_t nowtime = tv.tv_sec;
+    //convert timt_t to broken-down format struct tm. this is thread-safe.
+    //Note: difference between localtime() and localtime_r.
+    localtime_r(&nowtime, &nowtm);
+
+    char fmt[buf_size];
+    size_t length = strftime(fmt, buf_size, LOGGER_TIME_FORMAT, &nowtm);
+    snprintf (buf, buf_size, fmt, tv.tv_usec);
+    return strlen (buf);
 }
+
 
 const char * get_log_level_name(int log_level) {
     if (log_level >= LOG_LEVEL_TRACE && log_level <= LOG_LEVEL_FATAL) {
@@ -54,8 +89,24 @@ void print_logger_config () {
     printf("%s %s\n", "log build level", get_log_level_name(LOG_BUILD_LEVEL));
 }
 
-void logger(int log_level, const char *msg) {
-    if (log_level >= LOG_BUILD_LEVEL && log_level >= LOG_RUN_LEVEL) {
-      printf("[ %s ] %s | %s \n", get_log_level_name(log_level), get_log_time_string(), msg);
-    }
+void logger(int log_level, const char *fmt, ...) {
+    va_list ap;
+    va_start (ap, fmt);
+    logger_helper(log_level, fmt, ap);
+    va_end(ap);
+}
+
+void logger_helper(int log_level, const char *fmt, va_list ap) {
+  if (log_level >= LOG_BUILD_LEVEL && log_level >= LOG_RUN_LEVEL) {
+      //get timestamp of logger.
+      char log_time_buf [64];
+      get_log_time_string(log_time_buf, 64);
+      //get name of log level.
+      const char * level = get_log_level_name(log_level);
+
+      char log_buf[256];
+      snprintf(log_buf, 256, "[ %s ] [ %s ] MSG: %s\n", log_time_buf, level, fmt);
+
+      vfprintf(stdout, log_buf, ap);
+  }
 }

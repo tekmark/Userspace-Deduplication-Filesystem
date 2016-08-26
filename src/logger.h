@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <string.h>
 #include <time.h>
+#include <stdarg.h>
 
 #define DEFAULT_LOG_LEVEL LOG_LEVEL_DEBUG
 #define DEFAULT_LOG_BUILD_LEVEL LOG_LEVEL_INFO
@@ -38,18 +40,23 @@ extern const char* LOGGER_LEVEL_NAMES[];
 int LOG_RUN_LEVEL;
 
 #define LOGGER_DEFAULT_FORMAT "%s"
+extern const char * LOGGER_DEFAULT_TIME_FORMAT;
+
+// #ifndef LOGGER_TIME_FORMAT
+// #define LOGGER_TIME_FORMAT LOGGER_DEFAULT_TIME_FORMAT
+// #endif
 
 void set_log_level_debug ();
 void set_log_level_info();
 void set_log_level_warn();
 void set_log_level_error();
 
-void log_debug();
-void log_info();
-void log_warn();
-void log_error();
+void logger_debug(const char *fmt, ...);
+void logger_info(const char *fmt, ...);
+void logger_warn(const char *fmt, ...);
+void logger_error(const char *fmt, ...);
 
-void logger(int log_level, const char *msg);
+void logger(int log_level, const char *fmt, ...);
 
 void print_logger_config();
 
