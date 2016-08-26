@@ -1,4 +1,5 @@
-#include"lfs.h"
+#include "lfs.h"
+// #include "logger.h"
 /*
 const uint32_t c_blk_size = 4096;                 //block size is 4K
 const uint32_t c_seg_size = 4096;           //segment equals block size
@@ -624,10 +625,4 @@ void lfs_init() {
   printf("lfs_init: current inode id is %u\n", lfs_info->cur_inode->inode_id);
   print_inodemap(lfs_info->imap);
   printf("lfs_init: current_container_id %u\n", lfs_info->cur_container->header->container_id);
-}
-
-
-int main ( int  argc, char *argv[] ) {
-  lfs_init();
-  return fuse_main( argc, argv, &lfs_oper, NULL);
 }

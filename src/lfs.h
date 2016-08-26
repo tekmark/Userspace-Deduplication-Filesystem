@@ -9,6 +9,7 @@
 #include<fuse.h>
 #include<errno.h>
 #include<sys/types.h>
+#include "logger.h"
 #include"uthash.h"
 #include"util.h"
 #include"inode.h"
@@ -16,6 +17,6 @@
 #include"directory.h"
 
 
-void lfs_init(); 
+void lfs_init();
 
 #endif

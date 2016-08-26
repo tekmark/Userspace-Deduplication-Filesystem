@@ -1,0 +1,56 @@
+/*
+  Logger.
+ */
+#ifndef LOGGER_H
+#define LOGGER_H
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <time.h>
+
+#define DEFAULT_LOG_LEVEL LOG_LEVEL_DEBUG
+#define DEFAULT_LOG_BUILD_LEVEL LOG_LEVEL_INFO
+
+//TODO: LOG_BUILD_LEVEL should not be defined here.
+#define LOG_BUILD_LEVEL LOG_LEVEL_DEBUG
+
+#ifndef LOG_BUILD_LEVEL
+#define LOG_BUILD_LEVEL DEFAULT_LOG_BUILD_LEVEL
+#endif
+
+// #ifndef LOG_LEVEL
+// #define LOG_LEVEL DEFAULT_LOG_LEVEL
+// #endif
+
+enum {
+    LOG_LEVEL_TRACE,     //0
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_INFO,
+    LOG_LEVEL_WARN,
+    LOG_LEVEL_ERROR,
+    LOG_LEVEL_CRITICAL,
+    LOG_LEVEL_FATAL
+};
+
+extern const char* LOGGER_LEVEL_NAMES[];
+
+int LOG_RUN_LEVEL;
+
+#define LOGGER_DEFAULT_FORMAT "%s"
+
+void set_log_level_debug ();
+void set_log_level_info();
+void set_log_level_warn();
+void set_log_level_error();
+
+void log_debug();
+void log_info();
+void log_warn();
+void log_error();
+
+void logger(int log_level, const char *msg);
+
+void print_logger_config();
+
+#endif
