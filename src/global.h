@@ -1,16 +1,18 @@
 #ifndef LFS_GLOBAL_H_
 #define LFS_GLOBAL_H_
 
-#include<stdint.h>
-#include"inode.h"
-#include"container.h"
-#include"util.h"
-#include"uthash.h"
+#include <stdint.h>
 
+#include "inode.h"
+#include "container_types.h"
+#include "container_header.h"
+#include "container.h"
+#include "util.h"
+#include "uthash.h"
 
 #define MAX_FILENAME_LEN 256
 
-typedef struct container container_t; 
+//typedef struct container container_t;
 
 typedef struct {
   fingerprint_t fp;            //fingerprint as key in hashtable
@@ -27,13 +29,13 @@ typedef struct {
   namespace_record_t *lfs_namespace;
 
   container_t *cur_container;
-  container_t *buf_container; 
-  
-  uint32_t next_container_id; 
+  container_t *buf_container;
+
+  uint32_t next_container_id;
   inode_t *cur_inode;
   char *cur_path;
-  char *par_path;  
-  
+  char *par_path;
+
   uint32_t fd;
 
 } lfs_global_info_t;

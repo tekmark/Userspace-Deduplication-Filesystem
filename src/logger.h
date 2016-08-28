@@ -43,6 +43,13 @@ extern const char* LOGGER_LEVEL_NAMES[];
 
 int LOG_RUN_LEVEL;
 
+//default LOG_FP;
+#ifndef LOG_FP
+#ifdef stdout
+#define LOG_FP stdout
+#endif
+#endif
+
 #define LOGGER_DEFAULT_FORMAT "%s"
 extern const char * LOGGER_DEFAULT_TIME_FORMAT;
 

@@ -1,19 +1,53 @@
+#include <unistd.h>
 #include <getopt.h>
+#include <fcntl.h>
+#include <string.h>
+#include <error.h>
+#include <errno.h>
+
+#include "constants.h"
+#include "lfs_stat.h"
 #include "logger.h"
 #include "util.h"
 
+//for testing use.
+#include "container_header.h"
+#include "container.h"
+
+const char *c_default_lfs_filename = "./lfsfile";         //only used in main.c
+const char *c_default_lfs_mountpath = "/tmp/fuse";
+
+//TODO: not used yet.
+typedef struct {
+    const char *filename;
+    mode_t mode;
+    uint32_t size;
+} lfs_info_t;
+
+//TODO: formatting.
 void print_usage() {
+    //Examples;
+    printf("%s\n", "Examples: ");
     printf("%s\n", "Usage: ");
     printf("%s  %s   %s\n", "--log-level", "-L",
-        "Require Argument. log level(trace|debug|info|warn|error|critical|fatal)");
+        "Argument Required (trace|debug|info|warn|error|critical|fatal)");
+    // printf("%s %s %s\n", "--filename" )
 }
 
 void print_version() {
     printf("%s\n", "0.0.1");
 }
 
+void test() {
+    c_header_test();
+}
+
+//declaration of helper functions.
+uint32_t calculate_lfs_file_size(int blk_size, int container_blk_num, int container_num);
+
 int main ( int  argc, char *argv[] ) {
-    // test_func();
+    lfs_stat_t *stat = get_lfs_stat();
+
     int c;
     int digit_optind = 0;
     //
@@ -22,16 +56,21 @@ int main ( int  argc, char *argv[] ) {
     static struct option long_options [] = {
         {"log-level",  required_argument, 0, 'L'},
         {"log-file",   required_argument, 0, 'l'},
+        {"filename",   required_argument, 0, 'F'},
         {"mount-path", required_argument, 0, 'm'},
         {"help",       no_argument,       0, 'h'},
         {"version",    no_argument,       0, 'V'},
         {0,            0,                 0, 0}
     };
 
+    //arguments.
+    const char *mount_path = c_default_lfs_mountpath;
+    const char *lfs_filename = c_default_lfs_filename;
+
     while (1) {
         int this_option_optind = optind ? optind : 1;
         int option_index = 0;
-        c = getopt_long(argc, argv, "L:l:m:hv", long_options, &option_index);
+        c = getopt_long(argc, argv, "L:l:m:F:hv", long_options, &option_index);
 
         //reach the end of options.
         if (c == -1)
@@ -52,20 +91,34 @@ int main ( int  argc, char *argv[] ) {
             string_toupper(optarg);
             int ret = set_log_level_by_name(optarg);
             if (ret < 0) {
-                printf("%s\n", "No such log level." );
+                //printf("%s\n", "No such log level." );
+                logger_warn("No such log level");
                 exit(EXIT_FAILURE);
             } else {
-                //printf("%s%d\n", "Set LOG_RUN_LEVEL to ", ret);
+                //printf("%s%d/n", "Set LOG_RUN_LEVEL to ", ret);
             }
+            break;
+        case 'm':
+            //parese mount_path here.
+            printf ("option -L with value `%s'\n", optarg);
+            mount_path = optarg;
+            break;
+        case 'F':
+            printf ("option -F with value `%s'\n", optarg);
+            lfs_filename = optarg;
             break;
         case 'h':
             print_usage();
-            break;
+            exit(EXIT_SUCCESS);    //success or failure.
+            // break;
         case 'v':
             print_version();
+            //break;
+            exit(EXIT_SUCCESS);
+        case ':':
+            printf("%s\n", ":");
             break;
-        case '?':
-            break;
+        case '?':       //invalid option,
         default:
             print_usage();
             exit(EXIT_FAILURE);
@@ -78,6 +131,81 @@ int main ( int  argc, char *argv[] ) {
             printf("%s ", argv[optind++]);
         printf("\n");
     }
-    print_logger_config();
+
+
+    //Initialization.
+    logger_debug("Filename: %s, Mount location: %s", lfs_filename, mount_path);
+    logger_info("Initializing...");
+    int fd;
+    //TODO: use MARCOS, 777 just fro test.
+    //mode_t mode = 0777;
+    //TODO: remove flag O_TRUNC;
+    fd = open(lfs_filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
+    if (fd < 0) {   //if failed to open() file.
+        logger_error("Failed to create/open file : %s. Abort. Error: %s",
+                        lfs_filename, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    //print_logger_config();
+    //TODO: assign by getopt_long();
+    //create a file of required size on disk that needs to be used to represent the
+    //log structured filesystem.
+
+    // set fd.
+    stat->fd = fd;
+    // set block size.
+    stat->blk_size = c_default_blk_size;
+    // set # of system reserved block
+    stat->sys_reserved_blks = 1;
+    // set # of blocks per container.
+    stat->blks_per_container = c_default_blks_per_container;
+    // calculate container size (in bytes).
+    stat->container_size = stat->blk_size * stat->blks_per_container;
+    // set # of containers
+    stat->containers = c_default_containers;
+    // calculate size of filesystem, in bytes.
+    stat->size = stat->blk_size * stat->sys_reserved_blks +
+                        stat->container_size * stat->containers;
+
+    logger_info("Block size (in bytes)      : %d", stat->blk_size);
+    logger_info("Container size (in bytes)  : %d", stat->container_size);
+    logger_info("# of system reserved block : %d", stat->sys_reserved_blks);
+    logger_info("# of blocks per container  : %d", stat->blks_per_container);
+    logger_info("# of containers            : %d", stat->containers);
+    // allocate memory for; write to disk.
+    // NOTE: only used when creating new lfs file.
+    int lfs_filesize = stat->size;
+    char *buffer = malloc(lfs_filesize);
+    memset((void*) buffer, 0, lfs_filesize);
+    // write buffer to disk
+    ssize_t nbytes = pwrite(stat->fd, buffer, lfs_filesize, 0);
+    //free allocated buffer.
+    free(buffer);
+
+    if (nbytes < 0) {
+        logger_error("pwrite() failed. Abort()");
+        exit(EXIT_FAILURE);
+    }
+    if (nbytes != lfs_filesize) {
+        logger_error("pwrite() returns %d bytes which doesn't match file_size", nbytes);
+        exit(EXIT_FAILURE);
+    }
+
+    logger_info("LFS file created. location: %s, size: %d", lfs_filename, lfs_filesize);
+
+    //test container operations.
+    // print_lfs_stat();
+    //test();
+    container_test();
     exit(EXIT_SUCCESS);
+}
+
+//container size (in Byte) = (I/O block size)　x (# of blocks per container);
+//file size (in Byte) = (# of containers) * (container size) + reserved_blocks;
+//TODO: 1. take reserved blocks into consideration.(ignored currently).
+//TODO: 2. overflow check
+uint32_t calculate_lfs_file_size(int blk_size, int container_blk_num, int container_num) {
+    uint32_t container_size = blk_size * container_blk_num;
+    uint32_t file_size = container_size * container_num;
+    return file_size;
 }

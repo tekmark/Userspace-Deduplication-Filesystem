@@ -22,4 +22,8 @@ int32_t get_division_result (uint32_t dividend, uint32_t divisor);
 
 //convert string to uppercases.
 void string_toupper(char *str);
+
+//file size calculator
+//uint32_t calculate_lfs_file_size(int blk_size, int container_blk_num, int container_num);
+
 #endif

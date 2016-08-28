@@ -118,7 +118,7 @@ void logger_helper(int log_level, const char *fmt, va_list ap) {
       const char * level = get_log_level_name(log_level);
 
       char log_buf[256];
-      snprintf(log_buf, 256, "[ %s ] [ %s ] MSG: %s\n", log_time_buf, level, fmt);
+      snprintf(log_buf, 256, "[ %s ] [ %s ] %s\n", log_time_buf, level, fmt);
 
       vfprintf(stdout, log_buf, ap);
   }
