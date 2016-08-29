@@ -2,28 +2,40 @@
 
 void container_test() {
     container_t *container = container_alloc();
-    container_write(container);
-    container_write(container);
-    container_free(container);
 
+    // header test cases
+    //container_header_t *header = new_container_header(container->buffer);
+    // *container->header->id = 1;
+    *container->header->type = 98;
+
+    container_write(container);
+    container_buf_print(container->buffer);
+    container_write(container);
+    container_buf_print(container->buffer);
+    // container_free(container);
+    //
     container_t *c2 = container_alloc();
-    int ret = container_read(1, c2);
+    // int ret = container_read(1, c2);
     int cid = container_write(c2);
+    // container_buf_print(c2->buffer);
     container_read(cid, c2);
-    container_write(c2);
-    container_free(c2);
+    // container_write(c2);
+    container_buf_print(c2->buffer);
+    // container_free(c2);
 }
+
 
 //alloc memory for container. size is container_size in bytes
 //return pointer to container.
 container_t *container_alloc() {
-    //read container size from stat.
+    //get filesystem defined container size from stat
     lfs_stat_t *stat = get_lfs_stat();
-    // if (stat == NULL) {
-        // return NULL;
-    // }
+
+    //TODO: error handling if fails.
+    //assert if cannot get filesystem stat
     assert(stat);
-    //malloc for struct container_t
+
+    //allocate memeory for struct container_t,
     container_t *container = (container_t*) malloc (sizeof(container_t));
     memset(container, 0, sizeof(container_t));
 
@@ -31,40 +43,34 @@ container_t *container_alloc() {
     //malloc a blank buffer for container.
     container->buffer = (char*) malloc (buffer_size);
     memset (container->buffer, 0, buffer_size);
-    //logger_debug("conatainer_alloc(), buffer size: %d", buffer_size);
+
+    //NOTE: value is not set here.
+    container->header = new_container_header (container->buffer);
+
+    //no data pointer assigned at this time. (set to NULL);
+    container->data = NULL;
     return container;
 }
 
 void container_free(container_t *container) {
     assert(container);
     free(container->buffer);
+    free(container->header);
     free(container);
 }
 
-int cur_container_id;
-int new_container_id() {
-    // int ret = cur_container_id;
-    // ++cur_container_id;
-    // return ret;
-    return cur_container_id++;
-}
-
-//get absolute bytes in file for a container id.
-uint32_t get_container_offset_by_id (uint32_t container_id) {
-    lfs_stat_t *stat = get_lfs_stat();
-    assert(stat);
-    int addr = container_id * stat->container_size + stat->blk_size * stat->sys_reserved_blks;
-    return addr;
-}
-
-//write a container into disk, returns container_id (unique identifier）
+//write a container into disk, returns container_id (unique identifier)
 int container_write (container_t *container) {
     lfs_stat_t *stat = get_lfs_stat();
     assert(stat);
-    //get current container_id;
+    // get current container_id for stat.
     int cid = stat->cur_cid;
-    //TODO: update cid in buffer here.
-    int offset = get_container_offset_by_id(cid);
+
+    // update container id in buffer.
+    *container->header->id = cid;
+    // calculate absolute offset.
+    int offset = calculate_container_offset(cid, stat);
+    // write to disk.
     int ret = pwrite(stat->fd, container->buffer, stat->container_size, offset);
     if (ret < 0) {
         logger_error("Failed to write to disk.");
@@ -91,15 +97,25 @@ int container_read (uint32_t container_id, container_t *container) {
     lfs_stat_t *stat = get_lfs_stat();
     assert(stat);
 
-    //get contaienr offset (in bytes).d
-    int offset = get_container_offset_by_id (container_id);
+    //get contaienr offset (in bytes).
+    int offset = calculate_container_offset (container_id, stat);
     int ret = pread(stat->fd, container->buffer, stat->container_size, offset);
     if (ret < 0) {
         logger_error("Failed to read container#%d from disk.", container_id);
         return -1;
     }
-    //TODO: fill container_header
 
+    //NOTE: header has been filled when pread() above;
+    int cid = *container->header->id;
+    if (cid != container_id) {
+        logger_error("Container#%d. id in buffer is %d", container_id, cid);
+        //TODO: error handling.
+    }
+
+    //TODO: header check();
+    //get header info. assign pointer to container data here.
+    int data_offset = *container->header->data_offset;
+    container->data = container->buffer + data_offset;
     logger_debug("Read container#%d from disk.", container_id);
     return ret;
 }

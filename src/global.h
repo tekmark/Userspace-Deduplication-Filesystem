@@ -28,8 +28,8 @@ typedef struct {
 
   namespace_record_t *lfs_namespace;
 
-  container_t *cur_container;
-  container_t *buf_container;
+  // container_t *cur_container;
+  // container_t *buf_container;
 
   uint32_t next_container_id;
   inode_t *cur_inode;

@@ -99,10 +99,10 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_lfs_OBJECTS = lfs-main.$(OBJEXT) lfs-lfs_stat.$(OBJEXT) \
-	lfs-container_header.$(OBJEXT) lfs-constants.$(OBJEXT) \
-	lfs-logger.$(OBJEXT) lfs-container.$(OBJEXT) \
-	lfs-directory.$(OBJEXT) lfs-inode.$(OBJEXT) lfs-lfs.$(OBJEXT) \
-	lfs-util.$(OBJEXT)
+	lfs-container_utility.$(OBJEXT) lfs-container_header.$(OBJEXT) \
+	lfs-constants.$(OBJEXT) lfs-logger.$(OBJEXT) \
+	lfs-container.$(OBJEXT) lfs-directory.$(OBJEXT) \
+	lfs-inode.$(OBJEXT) lfs-lfs.$(OBJEXT) lfs-util.$(OBJEXT)
 lfs_OBJECTS = $(am_lfs_OBJECTS)
 lfs_DEPENDENCIES =
 lfs_LINK = $(CCLD) $(lfs_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
@@ -261,7 +261,7 @@ AM_CFLAGS = -g -Wall
 lfs_CFLAGS = -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 #lfs_LDFLAGS=-lfuse -lssl -lcrypto
 lfs_LDADD = -lfuse -lcrypto
-lfs_SOURCES = main.c lfs_stat.h lfs_stat.c container_header.h container_header.c constants.h constants.c logger.h logger.c container.c directory.c global.h inode.h lfs.h uthash.h  util.h container.h directory.h inode.c lfs.c util.c
+lfs_SOURCES = main.c conatainer_types.h lfs_stat.h lfs_stat.c container_utility.h container_utility.c container_header.h container_header.c constants.h constants.c logger.h logger.c container.c directory.c global.h inode.h lfs.h uthash.h  util.h container.h directory.h inode.c lfs.c util.c
 all: all-am
 
 .SUFFIXES:
@@ -351,6 +351,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-constants.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-container.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-container_header.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-container_utility.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-directory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-inode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-lfs.Po@am__quote@
@@ -400,6 +401,20 @@ lfs-lfs_stat.obj: lfs_stat.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lfs_stat.c' object='lfs-lfs_stat.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-lfs_stat.obj `if test -f 'lfs_stat.c'; then $(CYGPATH_W) 'lfs_stat.c'; else $(CYGPATH_W) '$(srcdir)/lfs_stat.c'; fi`
+
+lfs-container_utility.o: container_utility.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-container_utility.o -MD -MP -MF $(DEPDIR)/lfs-container_utility.Tpo -c -o lfs-container_utility.o `test -f 'container_utility.c' || echo '$(srcdir)/'`container_utility.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-container_utility.Tpo $(DEPDIR)/lfs-container_utility.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='container_utility.c' object='lfs-container_utility.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-container_utility.o `test -f 'container_utility.c' || echo '$(srcdir)/'`container_utility.c
+
+lfs-container_utility.obj: container_utility.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-container_utility.obj -MD -MP -MF $(DEPDIR)/lfs-container_utility.Tpo -c -o lfs-container_utility.obj `if test -f 'container_utility.c'; then $(CYGPATH_W) 'container_utility.c'; else $(CYGPATH_W) '$(srcdir)/container_utility.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-container_utility.Tpo $(DEPDIR)/lfs-container_utility.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='container_utility.c' object='lfs-container_utility.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-container_utility.obj `if test -f 'container_utility.c'; then $(CYGPATH_W) 'container_utility.c'; else $(CYGPATH_W) '$(srcdir)/container_utility.c'; fi`
 
 lfs-container_header.o: container_header.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-container_header.o -MD -MP -MF $(DEPDIR)/lfs-container_header.Tpo -c -o lfs-container_header.o `test -f 'container_header.c' || echo '$(srcdir)/'`container_header.c

@@ -8,6 +8,7 @@
 
 #include "container_header.h"
 #include "container_types.h"
+#include "container_utility.h"
 #include "global.h"
 #include "util.h"
 #include "lfs.h"
@@ -27,12 +28,30 @@
 // extern const uint32_t c_container_size;
 // extern const uint32_t c_max_container_num;
 
+/*
+  buffer fomart:
+  byte_0 (*buffer / *header)--> | container header ...
+                    *data   --> | container data ...
+ ------------------------------------------------------------------
+ buffer     : pointer to byte_0 in buffer.
+ header     : pointer to container header. see details in container_header.h
+ data       : pointer to container data.
+ */
+struct container {
+    //pointers.
+    char *buffer;
+    container_header_t *header;
+    char *data;
+    //size_t buf_size;
+};
+typedef struct container container_t;
 
+/*
 typedef struct {
   fingerprint_t fp;
   uint32_t seg;
 } fingerprint_seg_record_t;
-
+*/
 /*
 typedef struct container{
   container_header_t *header;
@@ -75,10 +94,9 @@ int container_read (uint32_t container_id, container_t *container);
 
 uint32_t container_copy(container_t * dst_container, container_t * src_container);
 
-
 void container_clean(uint32_t container_id, uint32_t *live_seg_vec,
                       uint32_t size);
-
+/*
 uint32_t container_add_seg( container_t *container, char *seg_buf);
 uint32_t container_get_seg( container_t *container, uint32_t seg_offset,
                             char *seg_buf);
@@ -86,5 +104,6 @@ uint32_t container_get_seg( container_t *container, uint32_t seg_offset,
 uint32_t container_header_add_fingerprint(container_t*, fingerprint_seg_record_t*);
 uint32_t container_header_find_fingerprint(container_t*, fingerprint_t*);
 void container_print_header(container_t * container);
+*/
 
 #endif
