@@ -156,7 +156,7 @@ int main ( int  argc, char *argv[] ) {
             //TODO: use MARCOS, 777 just fro test.
             //mode_t mode = 0777;
             //TODO: remove flag O_TRUNC;
-            fd = open(lfs_filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
+            fd = open(lfs_filename, O_RDWR|O_CREAT, 0777);
             if (fd < 0) {   //if failed to open() file.
                 logger_error("Failed to create/open file : %s. Abort. Error: %s",
                                 lfs_filename, strerror(errno));
@@ -241,6 +241,7 @@ int main ( int  argc, char *argv[] ) {
     // test();
     // c_header_test();
     container_test();
+    util_test();
     exit(EXIT_SUCCESS);
 }
 

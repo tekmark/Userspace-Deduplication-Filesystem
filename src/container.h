@@ -92,10 +92,10 @@ void container_free(container_t *);
 int container_write (container_t *container);
 int container_read (uint32_t container_id, container_t *container);
 
-uint32_t container_copy(container_t * dst_container, container_t * src_container);
+//uint32_t container_copy(container_t * dst_container, container_t * src_container);
 
-void container_clean(uint32_t container_id, uint32_t *live_seg_vec,
-                      uint32_t size);
+void container_clean(uint32_t container_id, uint32_t *seg_ids, uint32_t size);
+
 /*
 uint32_t container_add_seg( container_t *container, char *seg_buf);
 uint32_t container_get_seg( container_t *container, uint32_t seg_offset,

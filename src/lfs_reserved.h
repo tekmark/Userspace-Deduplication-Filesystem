@@ -12,9 +12,10 @@ struct lfs_summary {
     uint32_t container_size;             // conatiner size in bytes.
     uint32_t blks_per_container;         // # of blocks per container
     uint32_t containers;                 // # of containers
-    uint32_t sys_reserved_blks;
+    uint32_t sys_reserved_blks;          // # of reversed blocks
     uint32_t container_0_blk_offset;     // first container offset in blocks.
-    // uint32_t sys_reserved_blks;          // # of system reserved block.
+
+    uint32_t namespace_offset;           // namespace_offset in bytes.
 };
 typedef struct lfs_summary lfs_summary_t;
 
