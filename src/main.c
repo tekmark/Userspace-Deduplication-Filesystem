@@ -7,6 +7,7 @@
 
 #include "constants.h"
 #include "lfs_stat.h"
+#include "lfs_reserved.h"
 #include "logger.h"
 #include "util.h"
 
@@ -47,6 +48,8 @@ uint32_t calculate_lfs_file_size(int blk_size, int container_blk_num, int contai
 
 int main ( int  argc, char *argv[] ) {
     lfs_stat_t *stat = get_lfs_stat();
+
+    lfs_summary_t summary;
 
     int c;
     int digit_optind = 0;
@@ -135,63 +138,103 @@ int main ( int  argc, char *argv[] ) {
 
     //Initialization.
     logger_debug("Filename: %s, Mount location: %s", lfs_filename, mount_path);
-    logger_info("Initializing...");
-    int fd;
-    //TODO: use MARCOS, 777 just fro test.
-    //mode_t mode = 0777;
-    //TODO: remove flag O_TRUNC;
-    fd = open(lfs_filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
-    if (fd < 0) {   //if failed to open() file.
-        logger_error("Failed to create/open file : %s. Abort. Error: %s",
-                        lfs_filename, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    //print_logger_config();
-    //TODO: assign by getopt_long();
+
     //create a file of required size on disk that needs to be used to represent the
     //log structured filesystem.
+    int fd;
+    //check if file exists
 
+    fd = open(lfs_filename, O_RDWR, 0777);
+    if (fd < 0) {   //if not exists, create a new one.
+        if (errno != ENOENT) {
+            logger_error("Failed to open file. Abort. Error %s",
+                    lfs_filename, strerror(errno));
+            exit(EXIT_FAILURE);
+        } else {
+            logger_debug("File %s doesn't exist.", lfs_filename);
+            logger_info("Create a new filesystem, Initializing...");
+            //TODO: use MARCOS, 777 just fro test.
+            //mode_t mode = 0777;
+            //TODO: remove flag O_TRUNC;
+            fd = open(lfs_filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
+            if (fd < 0) {   //if failed to open() file.
+                logger_error("Failed to create/open file : %s. Abort. Error: %s",
+                                lfs_filename, strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+            //set fields in summary.
+            // set # of system reserved block
+            summary.sys_reserved_blks = 1;
+            // set I/O block size;
+            summary.blk_size = c_default_blk_size;
+            // set # of blocks per container.
+            summary.blks_per_container = c_default_blks_per_container;
+            // calculate container size in bytes;
+            summary.container_size = summary.blk_size * summary.blks_per_container;
+            // set # of containers
+            summary.containers = c_default_containers;
+            summary.filesystem_size = summary.blk_size * summary.sys_reserved_blks +
+                                summary.container_size * summary.containers;
+            //alloct buffer
+            uint32_t lfs_filesize = summary.filesystem_size;
+            char *buffer = malloc(lfs_filesize);
+            memset((void*) buffer, 0, lfs_filesize);
+
+            //copy summary to buffer.
+            memcpy(buffer, &summary, sizeof(summary));
+
+            // write buffer to disk
+            ssize_t nbytes = pwrite(fd, buffer, lfs_filesize, 0);
+            if (nbytes < 0) {
+                logger_error("pwrite() failed. Abort()");
+                exit(EXIT_FAILURE);
+            }
+            if (nbytes != lfs_filesize) {
+                logger_error("pwrite() returns %d bytes which doesn't match file_size", nbytes);
+                exit(EXIT_FAILURE);
+            }
+
+            //free allocated buffer.
+            free(buffer);
+        }
+    } else {    //if filesystem exists
+        //read system reserved blocks from disk.
+        logger_info("Found file on disk.");
+        //char *buf = (char *)malloc(sizeof(lfs_summary_t));
+        int read_nbytes = pread(fd, &summary, sizeof(lfs_summary_t), 0);
+        if (read_nbytes < 0) {
+            logger_error("Failed to read");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    //TODO : check if error exists.
+    //TODO: assign by getopt_long();
+
+    //set stat fields.
     // set fd.
     stat->fd = fd;
     // set block size.
-    stat->blk_size = c_default_blk_size;
+    stat->blk_size = summary.blk_size;
     // set # of system reserved block
-    stat->sys_reserved_blks = 1;
+    stat->sys_reserved_blks = summary.sys_reserved_blks;
     // set # of blocks per container.
-    stat->blks_per_container = c_default_blks_per_container;
-    // calculate container size (in bytes).
-    stat->container_size = stat->blk_size * stat->blks_per_container;
+    stat->blks_per_container = summary.blks_per_container;
+    // set container size (in bytes).
+    stat->container_size = summary.container_size;
     // set # of containers
-    stat->containers = c_default_containers;
-    // calculate size of filesystem, in bytes.
-    stat->size = stat->blk_size * stat->sys_reserved_blks +
-                        stat->container_size * stat->containers;
+    stat->containers = summary.containers;
+    // set size of filesystem, in bytes.
+    stat->size = summary.filesystem_size;
 
+    //TODO: create a print function
     logger_info("Block size (in bytes)      : %d", stat->blk_size);
     logger_info("Container size (in bytes)  : %d", stat->container_size);
     logger_info("# of system reserved block : %d", stat->sys_reserved_blks);
     logger_info("# of blocks per container  : %d", stat->blks_per_container);
     logger_info("# of containers            : %d", stat->containers);
-    // allocate memory for; write to disk.
-    // NOTE: only used when creating new lfs file.
-    int lfs_filesize = stat->size;
-    char *buffer = malloc(lfs_filesize);
-    memset((void*) buffer, 0, lfs_filesize);
-    // write buffer to disk
-    ssize_t nbytes = pwrite(stat->fd, buffer, lfs_filesize, 0);
-    //free allocated buffer.
-    free(buffer);
 
-    if (nbytes < 0) {
-        logger_error("pwrite() failed. Abort()");
-        exit(EXIT_FAILURE);
-    }
-    if (nbytes != lfs_filesize) {
-        logger_error("pwrite() returns %d bytes which doesn't match file_size", nbytes);
-        exit(EXIT_FAILURE);
-    }
-
-    logger_info("LFS file created. location: %s, size: %d", lfs_filename, lfs_filesize);
+//    logger_info("LFS file created. location: %s, size: %d", lfs_filename, lfs_filesize);
 
     //test container operations.
     // print_lfs_stat();

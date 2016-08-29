@@ -9,7 +9,7 @@ uint32_t calculate_container_offset (uint32_t cid, lfs_stat_t *st) {
 
 //get container id from buffer
 int container_buf_get_id(char *buf) {
-    //TODO: use header instead. 
+    //TODO: use header instead.
     int *cid = (uint32_t*) buf;
     return *cid;
 }

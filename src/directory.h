@@ -13,14 +13,14 @@
 
 typedef struct {                          //260bytes per entry, 4096/260 = 15
   char filename[MAX_FILENAME_LENGTH];     //255 + 1
-  uint32_t inode_id;                      //4 byte; 
-} dir_record_t; 
+  uint32_t inode_id;                      //4 byte;
+} dir_record_t;
 
 // structure to hold directory data
 typedef struct {
   uint32_t num;          // number of records
   dir_record_t *records; // records
-} dir_t; 
+} dir_t;
 
 int32_t dir_get_inode(const char *path, inode_t * inode);
 dir_t * open_root_dir();
@@ -31,8 +31,8 @@ int32_t get_division_result(uint32_t file_size, uint32_t blk_size);
 
 int32_t dir_add_entry(dir_t *dir, const char* filename, uint32_t inode_id);
 int32_t dir_remove_entry(dir_t *dir, const char* filename);
-int32_t dir_change_entry(dir_t *dir, const char* old_filename, const char* new_filename); 
-void print_dir_data(dir_t *dir); 
+int32_t dir_change_entry(dir_t *dir, const char* old_filename, const char* new_filename);
+void print_dir_data(dir_t *dir);
 
 int32_t get_inode_id_from_filename (const char *fname, dir_t * dir_data,
     uint32_t *pinode_id);

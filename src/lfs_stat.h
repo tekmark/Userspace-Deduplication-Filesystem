@@ -33,6 +33,14 @@ typedef struct lfs_stat lfs_stat_t;
 // extern lfs_stat_t stat;
 // lfs_stat_t *g_stat;
 
+//lfs_summary is the struct of filesystem stat.
+//
+//struct lfs_summary {
+//
+//}
+//typedef struct lfs_summary lfs_summary_t;
+
+
 lfs_stat_t * get_lfs_stat();
 void print_lfs_stat();
 
