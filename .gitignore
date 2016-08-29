@@ -1,1 +1,5 @@
 autom4te.cache/
+.autotools
+.cproject
+.project
+.settings/
