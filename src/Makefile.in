@@ -98,11 +98,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_lfs_OBJECTS = lfs-main.$(OBJEXT) lfs-lfs_stat.$(OBJEXT) \
-	lfs-container_utility.$(OBJEXT) lfs-container_header.$(OBJEXT) \
-	lfs-constants.$(OBJEXT) lfs-logger.$(OBJEXT) \
-	lfs-container.$(OBJEXT) lfs-directory.$(OBJEXT) \
-	lfs-inode.$(OBJEXT) lfs-lfs.$(OBJEXT) lfs-util.$(OBJEXT)
+am_lfs_OBJECTS = lfs-main.$(OBJEXT) lfs-namespace.$(OBJEXT) \
+	lfs-lfs_stat.$(OBJEXT) lfs-container_utility.$(OBJEXT) \
+	lfs-container_header.$(OBJEXT) lfs-constants.$(OBJEXT) \
+	lfs-logger.$(OBJEXT) lfs-container.$(OBJEXT) \
+	lfs-directory.$(OBJEXT) lfs-inode.$(OBJEXT) lfs-lfs.$(OBJEXT) \
+	lfs-util.$(OBJEXT)
 lfs_OBJECTS = $(am_lfs_OBJECTS)
 lfs_DEPENDENCIES =
 lfs_LINK = $(CCLD) $(lfs_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
@@ -261,7 +262,7 @@ AM_CFLAGS = -g -Wall
 lfs_CFLAGS = -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 #lfs_LDFLAGS=-lfuse -lssl -lcrypto
 lfs_LDADD = -lfuse -lcrypto
-lfs_SOURCES = main.c lfs_reserved.h conatainer_types.h lfs_stat.h lfs_stat.c container_utility.h container_utility.c container_header.h container_header.c constants.h constants.c logger.h logger.c container.c directory.c global.h inode.h lfs.h uthash.h  util.h container.h directory.h inode.c lfs.c util.c
+lfs_SOURCES = main.c namespace.h namespace.c lfs_reserved.h conatainer_types.h lfs_stat.h lfs_stat.c container_utility.h container_utility.c container_header.h container_header.c constants.h constants.c logger.h logger.c container.c directory.c global.h inode.h lfs.h uthash.h  util.h container.h directory.h inode.c lfs.c util.c
 all: all-am
 
 .SUFFIXES:
@@ -358,6 +359,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-lfs_stat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-logger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-namespace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-util.Po@am__quote@
 
 .c.o:
@@ -387,6 +389,20 @@ lfs-main.obj: main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='main.c' object='lfs-main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
+
+lfs-namespace.o: namespace.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-namespace.o -MD -MP -MF $(DEPDIR)/lfs-namespace.Tpo -c -o lfs-namespace.o `test -f 'namespace.c' || echo '$(srcdir)/'`namespace.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-namespace.Tpo $(DEPDIR)/lfs-namespace.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='namespace.c' object='lfs-namespace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-namespace.o `test -f 'namespace.c' || echo '$(srcdir)/'`namespace.c
+
+lfs-namespace.obj: namespace.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-namespace.obj -MD -MP -MF $(DEPDIR)/lfs-namespace.Tpo -c -o lfs-namespace.obj `if test -f 'namespace.c'; then $(CYGPATH_W) 'namespace.c'; else $(CYGPATH_W) '$(srcdir)/namespace.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-namespace.Tpo $(DEPDIR)/lfs-namespace.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='namespace.c' object='lfs-namespace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-namespace.obj `if test -f 'namespace.c'; then $(CYGPATH_W) 'namespace.c'; else $(CYGPATH_W) '$(srcdir)/namespace.c'; fi`
 
 lfs-lfs_stat.o: lfs_stat.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-lfs_stat.o -MD -MP -MF $(DEPDIR)/lfs-lfs_stat.Tpo -c -o lfs-lfs_stat.o `test -f 'lfs_stat.c' || echo '$(srcdir)/'`lfs_stat.c

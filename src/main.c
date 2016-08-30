@@ -14,6 +14,7 @@
 //for testing use.
 #include "container_header.h"
 #include "container.h"
+#include "namespace.h"
 
 const char *c_default_lfs_filename = "./lfsfile";         //only used in main.c
 const char *c_default_lfs_mountpath = "/tmp/fuse";
@@ -240,6 +241,7 @@ int main ( int  argc, char *argv[] ) {
     // print_lfs_stat();
     // test();
     // c_header_test();
+    namespace_test();
     container_test();
     util_test();
     exit(EXIT_SUCCESS);
