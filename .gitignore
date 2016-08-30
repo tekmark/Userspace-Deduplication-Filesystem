@@ -3,3 +3,11 @@ autom4te.cache/
 .cproject
 .project
 .settings/
+Makefile
+config.log
+config.status
+src/*.o
+src/.deps/
+src/Makefile
+src/lfs
+src/lfsfile
