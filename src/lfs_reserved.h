@@ -15,7 +15,7 @@ struct lfs_summary {
     uint32_t sys_reserved_blks;          // # of reversed blocks
     uint32_t container_0_blk_offset;     // first container offset in blocks.
 
-    uint32_t namespace_offset;           // namespace_offset in bytes.
+    uint32_t ns_stat_offset;             // namespace_offset in bytes.
 };
 typedef struct lfs_summary lfs_summary_t;
 

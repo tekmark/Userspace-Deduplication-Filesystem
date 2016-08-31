@@ -2,6 +2,11 @@
 
 void convert_SHA1_hex_str(uint8_t *, char *);
 
+fingerprint_t * fp_cpy(fingerprint_t *dest, fingerprint_t *src) {
+    memcpy(dest->fingerprint, src->fingerprint, sizeof(fingerprint_t));
+    return dest;
+}
+
 void util_test () {
     // The data to be hashed
     char data[] = "Hello, world!!!!!!!";

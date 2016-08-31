@@ -12,6 +12,8 @@
 
 void util_test();
 
+fingerprint_t * fp_cpy(fingerprint_t *dest, fingerprint_t *src);
+
 //SHA1 wrapper,
 //buf -
 //bytes -

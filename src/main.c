@@ -176,6 +176,9 @@ int main ( int  argc, char *argv[] ) {
             summary.containers = c_default_containers;
             summary.filesystem_size = summary.blk_size * summary.sys_reserved_blks +
                                 summary.container_size * summary.containers;
+
+            //TODO: hard coded here.
+            summary.ns_stat_offset = 1024;
             //alloct buffer
             uint32_t lfs_filesize = summary.filesystem_size;
             char *buffer = malloc(lfs_filesize);
@@ -234,16 +237,128 @@ int main ( int  argc, char *argv[] ) {
     logger_info("# of system reserved block : %d", stat->sys_reserved_blks);
     logger_info("# of blocks per container  : %d", stat->blks_per_container);
     logger_info("# of containers            : %d", stat->containers);
+    logger_info("namespace status offset    : %d", summary.ns_stat_offset);
 
+    //ns_t *namespace = (ns_t*)malloc(sizeof(ns_t));
+    //namespace->ns_stat = (ns_stat_t*)malloc(sizeof(ns_stat_t));
+
+    //ns_t *namespace = new_namespace();
+    stat->ns = new_namespace();
+
+    //read ns_stat section on disk.
+    //ns_stat_t ns_stat;
+    uint8_t *ns_stat_buf = (uint8_t*)malloc(sizeof(ns_stat_t));
+    int bytes = pread(fd, ns_stat_buf, sizeof(ns_stat_t), summary.ns_stat_offset);
+    if (bytes < 0) {
+        logger_error("Failed to read namespace stat on disk");
+        exit(EXIT_FAILURE);
+    }
+
+    stat->ns->ns_stat->size = *(uint32_t*)ns_stat_buf;
+
+    int tbl_size = stat->ns->ns_stat->size;
+
+    logger_debug("Namespace: # of records is %d.", tbl_size);
+    if (tbl_size > 0) {
+
+        int ns_r_size = 20 + sizeof(uint32_t) + sizeof(uint32_t);
+        //int ns_size = ns_stat.size * ns_r_size;
+        int ns_size = tbl_size * ns_r_size;
+        logger_debug("Namespace table size on disk is %d bytes", ns_size);
+
+        uint8_t *ns_tbl_buffer = (uint8_t*)malloc(ns_size);
+        uint32_t offset = summary.ns_stat_offset + sizeof(uint32_t) * 2;
+        bytes = pread(fd, ns_tbl_buffer, ns_size, offset);
+
+        ns_process_tbl_buffer(ns_tbl_buffer, tbl_size);
+
+        //loop to read all records
+    } else {
+        //logger_debug("Skip. Namespace records is 0.");
+        //TODO: remove test cases.
+        printf("fingerprint size: %d\n", (int)sizeof(fingerprint_t));
+        //get a real fingerprint.
+        char *text = "I am a text file ! hash me";
+        fingerprint_t fp0;
+        compute_fingerprint(text, strlen(text), &fp0);
+        fingerprint_print(&fp0);
+
+        //test fp_cpy();
+        fingerprint_t fp1;
+        fp_cpy(&fp1, &fp0);
+        fingerprint_print(&fp1);
+
+        //test hashtale operations.
+        ns_r_t r1;
+        fp_cpy(&r1.fp, &fp1);
+        fingerprint_print(&r1.fp);
+        r1.c_id = 199;
+        r1.c_stat = 1;
+
+        //must be NULL. table head;
+        ns_ht_r_t *hashtable = NULL;
+
+        ns_ht_r_t *ht_r1 = (ns_ht_r_t*)malloc(sizeof(ns_ht_r_t));
+        fp_cpy(&ht_r1->fp, &r1.fp);
+        fingerprint_print(&ht_r1->fp);
+        ht_r1->rec_num = 1999;
+
+        //add to hashtale;
+        // HASH_ADD(hh, hashtable, fp, sizeof(fingerprint_t), ht_r1);
+        ns_hashtable_add(&hashtable, ht_r1);
+        int count = ns_hashtable_count(&hashtable);
+        logger_debug("Hashtable count: %d", count);
+
+        /*
+        ns_ht_r_t *p = NULL;
+        p = ns_hashtable_find(&hashtable, &fp0);
+        if (p) {
+            printf("Found \n");
+        }
+        */
+        ns_hashtable_delete_all(&hashtable);
+        count = ns_hashtable_count(&hashtable);
+        logger_debug("Hashtable count: %d", count);
+
+        // ns_hashtable_add(hashtale, &r);
+        /*
+        ns_r_t r;
+        const char * dummy_fingerprint = "i am fingerprint";
+        memset(&r.fp, 0, sizeof(fingerprint_t));
+        memcpy(r.fp.fingerprint, dummy_fingerprint, strlen(dummy_fingerprint));
+        r.c_id = 199;
+        r.c_stat = 1;
+        uint8_t *tmp_buf = (uint8_t*)malloc(20 + sizeof(uint32_t) + sizeof(uint32_t));
+        ns_write_record_to_buffer(tmp_buf, 0, &r);
+
+        ns_ht_r_t *hashtale = NULL;
+        //test hash functions.
+        ns_hashtable_add(hashtale, &r);
+        //uint8_t *tmp_buf2 = (uint8_t*)malloc(20 + sizeof(uint32_t) + sizeof(uint32_t));
+
+        ns_ht_r_t *result = NULL;
+        ns_r_t r3;
+        memset(&r3.fp, 0, sizeof(fingerprint_t));
+        memcpy(r3.fp.fingerprint, dummy_fingerprint, strlen(dummy_fingerprint));
+        ns_hashtable_find(hashtale, &r3);
+
+        ns_r_t r2;
+        ns_get_record_from_buffer(tmp_buf, 0, &r2);
+
+
+        logger_debug("R2. id: %d, type: %d", r2.c_id, r2.c_stat);
+        logger_debug("fingerprint: %s", r2.fp.fingerprint);
+        */
+    }
 //    logger_info("LFS file created. location: %s, size: %d", lfs_filename, lfs_filesize);
 
     //test container operations.
     // print_lfs_stat();
     // test();
     // c_header_test();
-    namespace_test();
-    container_test();
-    util_test();
+    namespace_test2();
+    //container_test();
+    //util_test();
     exit(EXIT_SUCCESS);
 }
 

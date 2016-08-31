@@ -2,6 +2,8 @@
 #define LFS_STAT_H
 
 #include <stdio.h>
+
+#include "namespace.h"
 //disk
 //             container_start_blk
 //                      |
@@ -25,6 +27,8 @@ struct lfs_stat {
     int cur_cid;                          // container id to write. only modify by container_write().
 
     //TODO: *namespace
+    // ns_stat_t *ns_stat;                   //
+    ns_t *ns;
 };
 
 typedef struct lfs_stat lfs_stat_t;
