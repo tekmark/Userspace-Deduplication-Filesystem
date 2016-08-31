@@ -17,6 +17,7 @@ struct lfs_summary {
 
     uint32_t ns_stat_offset;             // namespace_offset in bytes.
 };
+
 typedef struct lfs_summary lfs_summary_t;
 
 #endif

@@ -21,7 +21,8 @@ const char * LOGGER_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%%06u %Z";
 //returns log level int. see enum in logger.h
 //returns -1, if no such log level name
 int set_log_level_by_name (const char * log_level) {
-    for (int i = 0; i < NUM_OF_LOG_LEVELS; ++i) {
+    int i;
+    for (i = 0; i < NUM_OF_LOG_LEVELS; ++i) {
         if (!strcmp(LOGGER_LEVEL_NAMES[i], log_level)) {
             LOG_RUN_LEVEL = i;
             return i;

@@ -52,7 +52,7 @@ void namespace_test2();
 
 //namespace record struct
 struct ns_r {
-    fingerprint_t fp;              //pointer points to fingerprint;
+    fp_t fp;              //pointer points to fingerprint;
     uint32_t c_id;                 //container id
     uint32_t c_stat;               //conatiner status.
 };
@@ -60,7 +60,7 @@ typedef struct ns_r ns_r_t;
 
 //used in uthash method.
 struct ns_ht_r {
-    fingerprint_t fp;                 // Key
+    fp_t fp;                 // Key
     uint32_t rec_num;
     UT_hash_handle hh;
 };

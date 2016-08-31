@@ -2,14 +2,24 @@
 
 void convert_SHA1_hex_str(uint8_t *, char *);
 
+/*
 fingerprint_t * fp_cpy(fingerprint_t *dest, fingerprint_t *src) {
     memcpy(dest->fingerprint, src->fingerprint, sizeof(fingerprint_t));
     return dest;
 }
 
+void fp_to_readable_hex(fp_t *fp, uint8_t *readable) {
+    int i;
+    for (i = 0; i < FINGERPRINT_LEN; ++i) {
+        sprintf(&readable[i * 2], "%02X", fp->data[i]);
+    }
+    readable[FINGERPRINT_READABLE_HEX_STR_LEN - 1] = 0;
+}
+*/
+
 void util_test () {
     // The data to be hashed
-    char data[] = "Hello, world!!!!!!!";
+    /*char data[] = "Hello, world!!!!!!!";
     size_t length = sizeof(data);
 
     fingerprint_t fp;
@@ -18,6 +28,7 @@ void util_test () {
     char hex[41];
     convert_SHA1_hex_str(fp.fingerprint, hex);
     printf("%s\n", hex);
+    */
     //fingerprint_print(&fp);
 }
 
@@ -29,11 +40,13 @@ void convert_SHA1_hex_str(uint8_t *fp, char *hash_str) {
     hash_str[40]=0;
 }
 
+/*
 uint8_t * compute_fingerprint(uint8_t *buf, size_t bytes, fingerprint_t *fp) {
     return SHA1(buf, bytes, fp->fingerprint);
 }
+*/
 
-void fingerprint_print( fingerprint_t *fp ) {
+void fingerprint_print(fingerprint_t *fp ) {
   uint32_t i = 0;
   for (i = 0; i < 20; ++i) {
     printf("%02X", fp->fingerprint[i]);

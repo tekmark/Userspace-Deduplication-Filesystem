@@ -15,6 +15,7 @@
 #include "container_header.h"
 #include "container.h"
 #include "namespace.h"
+#include "fingerprint.h"
 
 const char *c_default_lfs_filename = "./lfsfile";         //only used in main.c
 const char *c_default_lfs_mountpath = "/tmp/fuse";
@@ -143,8 +144,8 @@ int main ( int  argc, char *argv[] ) {
     //create a file of required size on disk that needs to be used to represent the
     //log structured filesystem.
     int fd;
-    //check if file exists
 
+    //check if file exists
     fd = open(lfs_filename, O_RDWR, 0777);
     if (fd < 0) {   //if not exists, create a new one.
         if (errno != ENOENT) {
@@ -239,11 +240,9 @@ int main ( int  argc, char *argv[] ) {
     logger_info("# of containers            : %d", stat->containers);
     logger_info("namespace status offset    : %d", summary.ns_stat_offset);
 
-    //ns_t *namespace = (ns_t*)malloc(sizeof(ns_t));
-    //namespace->ns_stat = (ns_stat_t*)malloc(sizeof(ns_stat_t));
-
-    //ns_t *namespace = new_namespace();
-    stat->ns = new_namespace();
+    //namespace 
+    ns_t *namespace = new_namespace();
+    //stat->ns = new_namespace();
 
     //read ns_stat section on disk.
     //ns_stat_t ns_stat;
@@ -254,9 +253,9 @@ int main ( int  argc, char *argv[] ) {
         exit(EXIT_FAILURE);
     }
 
-    stat->ns->ns_stat->size = *(uint32_t*)ns_stat_buf;
+    namespace->ns_stat->size = *(uint32_t*)ns_stat_buf;
 
-    int tbl_size = stat->ns->ns_stat->size;
+    int tbl_size = namespace->ns_stat->size;
 
     logger_debug("Namespace: # of records is %d.", tbl_size);
     if (tbl_size > 0) {
@@ -279,19 +278,20 @@ int main ( int  argc, char *argv[] ) {
         printf("fingerprint size: %d\n", (int)sizeof(fingerprint_t));
         //get a real fingerprint.
         char *text = "I am a text file ! hash me";
-        fingerprint_t fp0;
-        compute_fingerprint(text, strlen(text), &fp0);
-        fingerprint_print(&fp0);
+        fp_t fp0;
+        //compute_fingerprint(text, strlen(text), &fp0);
+        fp_compute(text, strlen(text), &fp0);
+        //fingerprint_print(&fp0);
 
         //test fp_cpy();
-        fingerprint_t fp1;
+        fp_t fp1;
         fp_cpy(&fp1, &fp0);
-        fingerprint_print(&fp1);
+        //fingerprint_print(&fp1);
 
         //test hashtale operations.
         ns_r_t r1;
         fp_cpy(&r1.fp, &fp1);
-        fingerprint_print(&r1.fp);
+        //fingerprint_print(&r1.fp);
         r1.c_id = 199;
         r1.c_stat = 1;
 
@@ -300,7 +300,7 @@ int main ( int  argc, char *argv[] ) {
 
         ns_ht_r_t *ht_r1 = (ns_ht_r_t*)malloc(sizeof(ns_ht_r_t));
         fp_cpy(&ht_r1->fp, &r1.fp);
-        fingerprint_print(&ht_r1->fp);
+        //fingerprint_print(&ht_r1->fp);
         ht_r1->rec_num = 1999;
 
         //add to hashtale;
