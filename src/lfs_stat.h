@@ -26,6 +26,7 @@ struct lfs_stat {
 
     int cur_cid;                          // container id to write. only modify by container_write().
 
+    int ns_stat_offset;
     //TODO: *namespace
     // ns_stat_t *ns_stat;                   //
     ns_t *ns;
@@ -43,7 +44,6 @@ typedef struct lfs_stat lfs_stat_t;
 //
 //}
 //typedef struct lfs_summary lfs_summary_t;
-
 
 lfs_stat_t * get_lfs_stat();
 void print_lfs_stat();

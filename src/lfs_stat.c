@@ -1,7 +1,7 @@
 #include "lfs_stat.h"
 
 // lfs_stat_t sys_stat;
-lfs_stat_t stat;
+static lfs_stat_t stat;
 
 lfs_stat_t * get_lfs_stat() {
     return &stat;

@@ -1,4 +1,5 @@
 #include "namespace.h"
+#include "lfs_stat.h"
 
 void namespace_test() {
 /*
@@ -76,11 +77,121 @@ void delete_namespace(ns_t *ns) {
     free(ns);
 }
 
+//fill ns_stat
+int ns_stat_read_disk (ns_stat_t *ns_stat) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+    //get addr on disk.
+    int fd = stat->fd;
+    int offset = stat->ns_stat_offset;
+    //TODO: convert ns_stat_t to DEFINE
+    uint8_t * ns_stat_buf = (uint8_t*)malloc(sizeof(ns_stat_t));
+    int bytes = pread(fd, ns_stat_buf, sizeof(ns_stat_t), offset);
+    if (bytes < 0) {
+        return -1;
+    }
+    //assign fields
+    ns_stat->size = *(uint32_t*)ns_stat_buf;
+    ns_stat->tbl_offset = *(uint32_t*)(ns_stat_buf + sizeof(uint32_t));
+    logger_debug("Read ns_stat -> |size : %d|tbl_offset : %d",
+                    ns_stat->size, ns_stat->tbl_offset);
+    return 0;
+}
+
+//wirte update ns_stat to disk.
+int ns_stat_write_disk (ns_stat_t *ns_stat) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
+    //get addr on disk.
+    int fd = stat->fd;
+    int offset = stat->ns_stat_offset;
+
+    uint8_t * ns_stat_buf = (uint8_t*)malloc(sizeof(ns_stat_t));
+    //
+    memcpy(ns_stat_buf, &ns_stat->size, sizeof(uint32_t));
+    memcpy(ns_stat_buf + sizeof(uint32_t), &ns_stat->tbl_offset, sizeof(uint32_t));
+    // *(uint32_t*)ns_stat_buf = ns_stat->size;
+    // *(uint32_t*)(ns_stat_buf + sizeof(uint32_t) = ns_stat->tbl_offset;
+
+    int bytes = pwrite(fd, ns_stat_buf, sizeof(ns_stat_t), offset);
+    if (bytes < 0) {
+        return -1;
+    }
+    logger_debug("Write ns_stat -> |size : %d|tbl_offset : %d",
+                    ns_stat->size, ns_stat->tbl_offset);
+    return 0;
+}
+
+//add recort to the end of table
+int ns_add_record(ns_r_t *r) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+    //get addr on disk.
+    int fd = stat->fd;
+    int size = stat->ns->ns_stat->size;
+    //calculate addr
+    //TODO :
+    // int offset = stat->ns->ns_stat->tbl_offset;
+    int offset = stat->ns_stat_offset + sizeof(ns_stat_t);
+
+    ns_ht_r_t *ht_r = (ns_ht_r_t*)malloc(sizeof(ns_ht_r_t));
+    fp_cpy(&ht_r->fp, &r->fp);
+    ht_r->rec_num = size;
+
+    ns_hashtable_add(&stat->ns->hashtable, ht_r);
+    //write to disk.
+    offset += size * (20 + sizeof(uint32_t) + sizeof(uint32_t));
+
+    uint8_t *r_buf = (uint8_t*)malloc(sizeof(ns_r_t));
+    memcpy(r_buf, &r->fp, FINGERPRINT_LEN);
+    //TODO: fill remaiming field.
+    int bytes = pwrite (fd, r_buf, sizeof(ns_r_t), offset);
+    if (bytes < 0) {
+        return -1;
+    }
+    logger_debug("Write record. offset: %d", offset);
+
+    //update size. (size + 1)
+    ++stat->ns->ns_stat->size;
+    ns_stat_write_disk(stat->ns->ns_stat);
+
+    int count = ns_hashtable_count(&stat->ns->hashtable);
+    logger_debug("Hashtable count: %d", count);
+}
+
+//use this after lfs_stat->ns.
+int ns_hashtable_build() {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat || stat->ns);
+    ns_t *ns = stat->ns;
+    int size = ns->ns_stat->size;
+    logger_debug("Building hashtable from namespace table(tbl_size: %d|tbl_offset: %d)",
+                        size, stat->ns_stat_offset + sizeof(ns_stat_t));
+    // int offset = stat->ns_stat_offset + sizeof(ns_stat_t);  //tbl_offset.
+    int ns_r_size = 20 + sizeof(uint32_t) + sizeof(uint32_t);
+    int tbl_size_bytes = ns_r_size * size;
+    uint8_t * buffer = (uint8_t*) malloc(tbl_size_bytes * sizeof(uint8_t));
+    int bytes = pread(stat->fd, buffer, tbl_size_bytes, + stat->ns_stat_offset + sizeof(ns_stat_t));
+    int i = 0;
+    for (i ; i < size; ++i) {
+        ns_r_t *r = (ns_r_t*) malloc(sizeof(ns_r_t));
+        int offset = i * ns_r_size;
+        memcpy(r->fp.fingerprint, buffer + offset, FINGERPRINT_SIZE);
+        uint8_t *fp_hex = (uint8_t*)malloc(FINGERPRINT_READABLE_HEX_STR_LEN * sizeof(uint8_t));
+        fp_to_readable_hex(&r->fp, fp_hex);
+        logger_debug("Add #%d[fp:%s] to hashtable", i, fp_hex);
+    }
+    return size;
+}
+
+
 int get_ns_stat(uint8_t *buf, ns_stat_t *stat) {
     // stat->size = *(uint32_t*)buf;
     // stat->tbl_offset = (uint32_t*) (buf + sizeof(uint32_t));
     return 0;
 }
+
 
 int update_ns_stat(ns_stat_t *stat) {
     //get ns_stat_offset
