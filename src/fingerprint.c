@@ -1,5 +1,10 @@
 #include "fingerprint.h"
 
+
+//const int c_sha1_len = 20;
+//const int c_fingerprint_len = c_sha1_len;
+//const int c_fingerprint_readable_hex_str_len = c_fingerprint_len + 2 * sizeof(uint32_t);
+
 fp_t * fp_cpy(fp_t *dest, fp_t *src) {
     memcpy(dest->fingerprint, src->fingerprint, sizeof(fp_t));
     return dest;

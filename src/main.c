@@ -243,9 +243,11 @@ int main ( int  argc, char *argv[] ) {
     logger_info("namespace status offset    : %d", stat->ns_stat_offset);
 
     //namespace
+    //alloc memeory for namespace.
     ns_t *namespace = new_namespace();
-
+    //read namespace status on disk.
     int ret = ns_stat_read_disk(namespace->ns_stat);
+
     // namespace->ns_stat->size = 1;
     // ns_stat_write_disk(namespace->ns_stat);
     // ns_stat_read_disk(namespace->ns_stat);
@@ -259,29 +261,21 @@ int main ( int  argc, char *argv[] ) {
     }*/
 
     //assign fields
-    // int tbl_size = *(uint32_t*)ns_stat_buf;
     int tbl_size = namespace->ns_stat->size;
-    namespace->ns_stat->size = tbl_size;
 
+    //assign prointer points to namespace
     stat->ns = namespace;
 
-    logger_debug("Namespace: # of records is %d.", tbl_size);
+    //if there are entries in namespace
+    //ns_table is not empty.
     if (tbl_size > 0) {
-
-        int ns_r_size = 20 + sizeof(uint32_t) + sizeof(uint32_t);
-        //int ns_size = ns_stat.size * ns_r_size;
-        int ns_size = tbl_size * ns_r_size;
-        logger_debug("Namespace table size on disk is %d bytes", ns_size);
-        /*
-        uint8_t *ns_tbl_buffer = (uint8_t*)malloc(ns_size);
-        uint32_t offset = summary.ns_stat_offset + sizeof(uint32_t) * 2;
-        int bytes = pread(fd, ns_tbl_buffer, ns_size, offset);
-
-        ns_process_tbl_buffer(ns_tbl_buffer, tbl_size);
-        */
+        //calcuate bytes
+        int ns_size = tbl_size * NAMESPACE_RECORD_LEN;
+        logger_debug("Namespace: # of entries : %d, table size on disk is %d bytes",
+                      tbl_size, ns_size);
+        //build hashtable from disk.
         ns_hashtable_build();
-        //loop to read all records
-    } else {
+    } else {        //if tbl_size is empty.
         //logger_debug("Skip. Namespace records is 0.");
         //TODO: remove test cases.
         printf("fingerprint size: %d\n", (int)sizeof(fingerprint_t));
@@ -366,13 +360,7 @@ int main ( int  argc, char *argv[] ) {
     }
 //    logger_info("LFS file created. location: %s, size: %d", lfs_filename, lfs_filesize);
 
-    //test container operations.
-    // print_lfs_stat();
-    // test();
-    // c_header_test();
-    namespace_test2();
-    //container_test();
-    //util_test();
+    //NOTE: put test functions here
     exit(EXIT_SUCCESS);
 }
 
