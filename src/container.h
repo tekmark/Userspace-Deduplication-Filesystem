@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include "container_header.h"
-#include "container_types.h"
 #include "container_utility.h"
 #include "global.h"
 #include "util.h"

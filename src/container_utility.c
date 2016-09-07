@@ -37,7 +37,6 @@ void container_buf_print(char *buf) {
     logger_debug("id : %d | type: %d", id, type);
 }
 
-
 void container_header_print(container_header_t *header) {
     logger_debug("Container#%d (type=>%d)", *header->id, *header->type);
     logger_debug("data_blk_offset=>%d, seg_tbl_offset=>%d",
@@ -52,6 +51,7 @@ void container_header_print(container_header_t *header) {
         c_header_get_seg_info(header, i, &r);
         char fp_hex_str[FINGERPRINT_READABLE_HEX_STR_LEN];
         fp_to_readable_hex(&r.fp, fp_hex_str);
-        logger_debug("Seg#%d:[fp=>%s, blk=>%d]", r.seg_no, fp_hex_str, r.blk_offset);
+        logger_debug("Seg#%d:[fp=>%s, blk=>%d, size=>%d]", r.seg_no,
+                        fp_hex_str, r.blk_offset, r.seg_size);
     }
 }

@@ -14,8 +14,18 @@ void container_test() {
     memcpy(s->data, text, strlen(text));
     // container_write_seg(container, s, 1);
     container_add_seg(container, s);
-    //container_write(container);
+
     container_print(container);
+    container_write(container);
+
+    fp_t fp0;
+    //fp_compute(text, strlen(text), fp0);
+    seg_compute_fingerprint(s, &fp0);
+    char fp_readable[FINGERPRINT_READABLE_HEX_STR_LEN];
+    fp_to_readable_hex(&fp0, fp_readable);
+    logger_debug("FP=>%s", fp_readable);
+    segment_t *seg = container_get_seg_by_fp(container, &fp0);
+    assert(seg);
 
     // segment_t *s2 = container_get_seg(container, 0);
 
@@ -23,12 +33,16 @@ void container_test() {
     container_write(container);
     container_buf_print(container->buffer);
     // container_free(container);
-    //
+    //*/
     container_t *c2 = container_alloc();
+    container_read(0, c2);
+    container_print(c2);
+    segment_t *seg2 = container_get_seg(c2, 0);
+    logger_debug("seg_size=>%d", seg2->size);
     // int ret = container_read(1, c2);
-    int cid = container_write(c2);
+    //int cid = container_write(c2);
     // container_buf_print(c2->buffer);
-    container_t *c3 = container_alloc();
+    /*container_t *c3 = container_alloc();
     container_read(0, c3);
     // container_write(c2);
     container_buf_print(c2->buffer);
@@ -77,12 +91,13 @@ int container_write (container_t *container) {
     assert(stat);
     // get current container_id for stat.
     int cid = stat->cur_cid;
-    logger_debug("cur id->%d", cid);
+
     assert(container->header->data_blk_offset);
     assert(container->header->id);
+
     // update container id in buffer.
     *container->header->id = cid;
-    logger_debug("DEBUGE");
+
     // calculate absolute offset.
     int offset = calculate_container_offset(cid, stat);
     // write to disk.
@@ -97,8 +112,10 @@ int container_write (container_t *container) {
         return -1;
     }
 
-    logger_debug("Wrote conatainer#%d to disk, block %d",
-                    cid, offset / stat->blk_size);
+    int from_blk = offset / stat->blk_size;
+    int to_blk = from_blk + stat->blks_per_container;
+    logger_debug("Write conatainer#%d (blk#%d - blk#%d) to disk",
+                    cid, from_blk, to_blk);
 
     //update cid in stat.
     stat->cur_cid += 1;
@@ -260,6 +277,7 @@ int container_add_seg(container_t *container, segment_t *seg) {
 
     int blk_offset = *container->header->data_blk_offset;
     seg_info.blk_offset = blk_offset;
+    seg_info.seg_size = size;
 
     int byte_offset = blk_offset * stat->blk_size;
 
@@ -302,13 +320,19 @@ segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp) {
     lfs_stat_t *stat = get_lfs_stat();
     assert(stat);
 
+    uint8_t fp_readable[FINGERPRINT_READABLE_HEX_STR_LEN];
+    fp_to_readable_hex(fp, fp_readable);
     seg_tbl_r_t r;
     int ret = c_header_find_seg_by_fp(container->header, fp, &r);
     if (ret < 0) {
+        logger_debug("Failed to find fingerprint[%s] in header", fp_readable);
         return NULL;
     }
+    logger_debug("seg_no: %d", ret);
     int offset = r.blk_offset * stat->blk_size;
+    logger_debug("SEG SIZE: %d", r.seg_size);
     segment_t * seg = seg_alloc(r.seg_size);
+
     memcpy(seg->data, container->buffer + offset, r.seg_size);
 
     return seg;

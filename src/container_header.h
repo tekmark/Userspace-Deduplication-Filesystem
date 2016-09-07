@@ -68,6 +68,7 @@ struct seg_tbl {
 typedef struct seg_tbl seg_tbl_t;
 
 struct container_header {
+    uint8_t *buffer;            //points to buffer, equals to container->buffer
     uint32_t *id;
     uint32_t *type;
     uint32_t *data_blk_offset;
