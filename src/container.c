@@ -1,15 +1,25 @@
 #include "container.h"
 
 void container_test() {
+    logger_debug("TESTING container operations ...");
     container_t *container = container_alloc();
 
-    // header test cases
-    //container_header_t *header = new_container_header(container->buffer);
-    // *container->header->id = 1;
+    //init container, set to defaults.
     *container->header->type = 98;
+    *container->header->data_blk_offset = 1;
+    *container->header->seg_tbl->offset = CONTAINER_HEADER_DEFAULT_SEG_TBL_OFFSET;
 
-    container_write(container);
-    container_buf_print(container->buffer);
+    segment_t *s = seg_alloc(4096);
+    const char * text = "i am segment, hahaha";
+    memcpy(s->data, text, strlen(text));
+    // container_write_seg(container, s, 1);
+    container_add_seg(container, s);
+    //container_write(container);
+    container_print(container);
+
+    // segment_t *s2 = container_get_seg(container, 0);
+
+    /*container_buf_print(container->buffer);
     container_write(container);
     container_buf_print(container->buffer);
     // container_free(container);
@@ -18,12 +28,14 @@ void container_test() {
     // int ret = container_read(1, c2);
     int cid = container_write(c2);
     // container_buf_print(c2->buffer);
-    container_read(cid, c2);
+    container_t *c3 = container_alloc();
+    container_read(0, c3);
     // container_write(c2);
     container_buf_print(c2->buffer);
+    segment_t *s2 = container_read_seg(c3, 4096, 4096);
+    logger_debug("Segment Data: %s", s2->data);*/
     // container_free(c2);
 }
-
 
 //alloc memory for container. size is container_size in bytes
 //return pointer to container.
@@ -41,12 +53,12 @@ container_t *container_alloc() {
 
     int buffer_size = stat->container_size;
     //malloc a blank buffer for container.
-    container->buffer = (char*) malloc (buffer_size);
+    container->buffer = (uint8_t*) malloc (buffer_size);
     memset (container->buffer, 0, buffer_size);
 
     //NOTE: value is not set here.
     container->header = new_container_header (container->buffer);
-
+    assert(container->header->id);
     //no data pointer assigned at this time. (set to NULL);
     container->data = NULL;
     return container;
@@ -65,9 +77,12 @@ int container_write (container_t *container) {
     assert(stat);
     // get current container_id for stat.
     int cid = stat->cur_cid;
-
+    logger_debug("cur id->%d", cid);
+    assert(container->header->data_blk_offset);
+    assert(container->header->id);
     // update container id in buffer.
     *container->header->id = cid;
+    logger_debug("DEBUGE");
     // calculate absolute offset.
     int offset = calculate_container_offset(cid, stat);
     // write to disk.
@@ -114,7 +129,7 @@ int container_read (uint32_t container_id, container_t *container) {
 
     //TODO: header check();
     //get header info. assign pointer to container data here.
-    int data_offset = *container->header->data_offset;
+    int data_offset = *container->header->data_blk_offset * stat->blk_size;
     container->data = container->buffer + data_offset;
     logger_debug("Read container#%d from disk.", container_id);
     return ret;
@@ -170,31 +185,163 @@ int container_read (uint32_t container_id, container_t *container) {
 //                       uint32_t size) {
 // }
 //
-// uint32_t container_add_seg( container_t *container, char *seg_buf) {
-//   //uint32_t seg_num = container->offset/SEG_SIZE;  //+1 because next seg
-//   printf("container_add_seg: container_offset %u\n",
-//            container->seg_offset);
-//   if ( container->seg_offset >= c_container_blk_num ) {
-//     printf("cannot add seg to container because no available seg\n");
-//     return -1;
-//   } else {
-//     printf("seg is added to container with seg_no %u\n", container->seg_offset);
-//     memcpy( container->buf + container->seg_offset * c_seg_size,
-//             seg_buf, c_seg_size);
-//     container->seg_offset += 1;
-//     if( container->seg_offset == c_container_seg_num ) {
-//       printf("container_add_seg: container is full, write to disk\n");
-//       container_print_header(container);
-//       lfs_info->next_container_id = container_write( container, NULL) + 1;
-//       printf("container_add_seg: next container id = %u\n", lfs_info->next_container_id);
-//       //memset(container, 0, sizeof(container_t));
-//       memset(container->buf, 0, c_container_size);
-//       container->header->container_id = lfs_info->next_container_id;
-//       container->seg_offset = 1;
-//     }
-//     return  0;
-//   }
-// }
+
+//seg_buf - segment buffer.
+//count   - size of segment buffer, in bytes.
+// uint32_t container_add_seg (container_t *container, char *seg_buf, size_t count) {
+  //uint32_t seg_num = container->offset/SEG_SIZE;  //+1 because next seg
+  // printf("container_add_seg: container_offset %u\n",
+        //    container->seg_offset);
+
+
+
+//get specified block from contaienr
+int container_read_blk(container_t *container, int blk_num, uint8_t* blk) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
+    int offset = blk_num * stat->blk_size;
+    memcpy(blk, container->buffer + offset, stat->blk_size);
+    return 0;
+}
+
+int container_write_blk(container_t *container, uint8_t * blk, int blk_num) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
+    int offset = blk_num * stat->blk_size;
+    memcpy(container->buffer + offset, blk, stat->blk_size);
+    return 0;
+}
+
+
+int container_write_seg(container_t *container, segment_t *seg, int blk_offset) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
+    //check if blk offset is valid.
+
+    //TODO: calculate seg_size in bytes.
+    int seg_size = stat->blk_size; //hardcoded
+
+    int offset = blk_offset * stat->blk_size;
+    memcpy(container->buffer + offset, seg->data, seg_size);
+
+    logger_debug("Add segment to container, size : %d, blk_offset : %d",
+                    seg_size, blk_offset);
+    return 0;
+}
+
+//offset - block offset of segment
+//size - # of blocks
+segment_t * container_read_seg(container_t *container, int blk_offset, int count) {
+    //get segment sizes
+    segment_t *seg = seg_alloc(4096);
+
+    memcpy(seg->data, container->buffer + blk_offset, count);
+    logger_debug("Get segment at offset: %d, size: %d", blk_offset, count);
+    return seg;
+}
+
+//container operations.
+int container_add_seg(container_t *container, segment_t *seg) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
+    int blks = seg->blks;
+    int size = seg->size;
+
+    seg_tbl_r_t seg_info;
+
+    //get fingerprint of segment.
+    seg_compute_fingerprint(seg, &seg_info.fp);
+    char fp_hex[FINGERPRINT_READABLE_HEX_STR_LEN];
+    fp_to_readable_hex(&seg_info.fp, fp_hex);
+
+    int blk_offset = *container->header->data_blk_offset;
+    seg_info.blk_offset = blk_offset;
+
+    int byte_offset = blk_offset * stat->blk_size;
+
+    memcpy(container->buffer + byte_offset, seg->data, seg->size);
+    assert(container->header->id);
+
+    //add metadata of seg to header.
+    c_header_add_seg_info(container->header, &seg_info);
+
+    logger_debug("blk_offset->%d, byte_offset->%d, fp->%s",
+                    blk_offset, byte_offset, fp_hex);
+    assert(container->header->id);
+    return 0;
+
+}
+
+segment_t * container_get_seg(container_t *container, int seg_no) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
+    //get metadata of segment
+    seg_tbl_r_t r;
+    c_header_get_seg_info(container->header, seg_no, &r);
+    // r->blks;
+    uint32_t seg_size = r.seg_size;
+    // uint32_t blk_offset = r->blk_offset;
+    uint32_t byte_offset = r.blk_offset * stat->blk_size;
+
+    segment_t *seg = (segment_t*)malloc(sizeof(segment_t));
+    //memory alloc
+    seg->data = (uint8_t*)malloc(seg_size * sizeof(uint8_t));
+    seg->size = seg_size;
+
+    memcpy(seg->data, container->buffer + byte_offset, seg_size);
+
+    return seg;
+}
+
+segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp) {
+    lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
+    seg_tbl_r_t r;
+    int ret = c_header_find_seg_by_fp(container->header, fp, &r);
+    if (ret < 0) {
+        return NULL;
+    }
+    int offset = r.blk_offset * stat->blk_size;
+    segment_t * seg = seg_alloc(r.seg_size);
+    memcpy(seg->data, container->buffer + offset, r.seg_size);
+
+    return seg;
+}
+
+void container_print(container_t *container) {
+    // logger_debug("Container:");
+    container_header_print(container->header);
+}
+
+// int conatainer_get_seg(container_t *container, int blk_offset)
+/*
+  if ( container->seg_offset >= c_container_blk_num ) {
+    printf("cannot add seg to container because no available seg\n");
+    return -1;
+  } else {
+    printf("seg is added to container with seg_no %u\n", container->seg_offset);
+    memcpy( container->buf + container->seg_offset * c_seg_size,
+            seg_buf, c_seg_size);
+    container->seg_offset += 1;
+    if ( container->seg_offset == c_container_seg_num ) {
+      printf("container_add_seg: container is full, write to disk\n");
+      container_print_header(container);
+      lfs_info->next_container_id = container_write( container, NULL) + 1;
+      printf("container_add_seg: next container id = %u\n", lfs_info->next_container_id);
+      //memset(container, 0, sizeof(container_t));
+      memset(container->buf, 0, c_container_size);
+      container->header->container_id = lfs_info->next_container_id;
+      container->seg_offset = 1;
+    }
+    return  0;
+  }
+}*/
 //
 // uint32_t container_get_seg( container_t *container, uint32_t offset,
 //                        char *seg_buf) {

@@ -10,6 +10,16 @@ fp_t * fp_cpy(fp_t *dest, fp_t *src) {
     return dest;
 }
 
+int fp_cmp(fp_t *fp1, fp_t *fp2) {
+    int i;
+    for (i = 0; i < FINGERPRINT_LEN; ++i) {
+        if (fp1->fingerprint[i] != fp2->fingerprint[i]) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 void fp_to_readable_hex(fp_t *fp, uint8_t *readable) {
     int i;
     for (i = 0; i < FINGERPRINT_LEN; ++i) {

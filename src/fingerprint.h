@@ -31,6 +31,8 @@ typedef struct fp_readable fp_readable_t;
 
 //fingerprint copy
 fp_t * fp_cpy(fp_t *dest, fp_t *src);
+//fingerprint compare; return 0 if same, return -1 if not
+int fp_cmp(fp_t *fp1, fp_t *fp2);
 //convert fingerprint to a human readable string.
 void fp_to_readable_hex(fp_t *fp, uint8_t *readable);
 

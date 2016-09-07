@@ -38,8 +38,20 @@ void container_buf_print(char *buf) {
 }
 
 
-
 void container_header_print(container_header_t *header) {
-    logger_debug("Container Header | id: %d | type : %d |" ,
-                    header->id, header->type);
+    logger_debug("Container#%d (type=>%d)", *header->id, *header->type);
+    logger_debug("data_blk_offset=>%d, seg_tbl_offset=>%d",
+                    *header->data_blk_offset, *header->seg_tbl->offset);
+
+    //get table size (# of entries).
+    int size = *header->seg_tbl->size;
+    logger_debug("-----Segment Table (size: %d)-----", size);
+    int i;
+    for (i = 0; i < size; ++i) {
+        seg_tbl_r_t r;
+        c_header_get_seg_info(header, i, &r);
+        char fp_hex_str[FINGERPRINT_READABLE_HEX_STR_LEN];
+        fp_to_readable_hex(&r.fp, fp_hex_str);
+        logger_debug("Seg#%d:[fp=>%s, blk=>%d]", r.seg_no, fp_hex_str, r.blk_offset);
+    }
 }

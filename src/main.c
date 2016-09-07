@@ -359,7 +359,12 @@ int main ( int  argc, char *argv[] ) {
         */
     }
 //    logger_info("LFS file created. location: %s, size: %d", lfs_filename, lfs_filesize);
+    // c_header_test();
+    // ---------------------------------------
+    
+    // ---------------------------------------
 
+    container_test();
     //NOTE: put test functions here
     exit(EXIT_SUCCESS);
 }

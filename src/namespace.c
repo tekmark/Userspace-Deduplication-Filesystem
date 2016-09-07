@@ -213,12 +213,12 @@ int update_ns_stat(ns_stat_t *stat) {
 }
 
 int ns_hashtable_add (ns_ht_r_t **hashtable, ns_ht_r_t *r) {
-    HASH_ADD(hh, *hashtable, fp, sizeof(fingerprint_t), r);
+    HASH_ADD(hh, *hashtable, fp, sizeof(fp_t), r);
 }
 
-ns_ht_r_t * ns_hashtable_find (ns_ht_r_t **hashtable, fingerprint_t *fp) {
+ns_ht_r_t * ns_hashtable_find (ns_ht_r_t **hashtable, fp_t *fp) {
     ns_ht_r_t *result = NULL;
-    HASH_FIND(hh, *hashtable, fp, sizeof(fingerprint_t), result);
+    HASH_FIND(hh, *hashtable, fp, sizeof(fp_t), result);
     return result;
 }
 
@@ -234,7 +234,7 @@ int ns_hashtable_count(ns_ht_r_t **hashtable) {
     int count = HASH_COUNT(*hashtable);
     return count;
 }
-
+/*
 int ns_process_tbl_buffer(uint8_t *buffer, uint32_t record_count) {
     //read records
     int i = 0;
@@ -263,4 +263,4 @@ int ns_write_record_to_buffer(uint8_t *buf, uint32_t record_num, ns_r_t *r) {
     memcpy(buf + offset, r->fp.fingerprint, 20);
     memcpy(buf + offset + 20, &r->c_id, sizeof(uint32_t));
     memcpy(buf + offset + 20 + sizeof(uint32_t), &r->c_stat, sizeof(uint32_t));
-}
+}*/

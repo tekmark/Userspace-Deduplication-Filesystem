@@ -13,7 +13,7 @@
 #define MAX_FILENAME_LEN 256
 
 //typedef struct container container_t;
-
+/*
 typedef struct {
   fingerprint_t fp;            //fingerprint as key in hashtable
   uint32_t container_id;       //container_id as value in hashtable
@@ -41,5 +41,5 @@ typedef struct {
 } lfs_global_info_t;
 
 lfs_global_info_t *lfs_info;
-
+*/
 #endif

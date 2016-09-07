@@ -14,6 +14,8 @@
 #include "lfs.h"
 #include "lfs_stat.h"
 #include "logger.h"
+#include "segment.h"
+
 
 /*
   relationship between I/O block and container.
@@ -46,19 +48,6 @@ struct container {
 };
 typedef struct container container_t;
 
-/*
-typedef struct {
-  fingerprint_t fp;
-  uint32_t seg;
-} fingerprint_seg_record_t;
-*/
-/*
-typedef struct container{
-  container_header_t *header;
-  char *buf;
-  uint32_t seg_offset;
-} container_t;
-*/
 /*
  container (8 blocks), segment(1 block);
  |-----------------------------------------------------------|
@@ -96,14 +85,23 @@ int container_read (uint32_t container_id, container_t *container);
 
 void container_clean(uint32_t container_id, uint32_t *seg_ids, uint32_t size);
 
-/*
-uint32_t container_add_seg( container_t *container, char *seg_buf);
-uint32_t container_get_seg( container_t *container, uint32_t seg_offset,
-                            char *seg_buf);
 
+int container_write_seg(container_t *container, segment_t *seg, int blk_offset);
+segment_t * container_read_seg(container_t *container, int blk_offset, int count);
+
+
+int container_add_seg(container_t *container, segment_t *seg);
+segment_t * container_get_seg(container_t *container, int seg_no);
+// uint32_t container_get_seg(container_t *container, uint32_t seg_offset,
+                            // char *seg_buf);
+/*
 uint32_t container_header_add_fingerprint(container_t*, fingerprint_seg_record_t*);
 uint32_t container_header_find_fingerprint(container_t*, fingerprint_t*);
 void container_print_header(container_t * container);
 */
+
+segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp);
+
+void container_print(container_t *container);
 
 #endif
