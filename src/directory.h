@@ -2,9 +2,11 @@
 #define DIRECTORY__H
 
 #include <stdint.h>
+
 #include "global.h"
 #include "util.h"
 #include "inode.h"
+#include "logger.h"
 
 /*
     | # of files in direcory |
@@ -38,14 +40,20 @@ struct dir {
 };
 typedef struct dir dir_t;
 
+
 int dir_add_record(dir_t *dir, const char* filename, uint32_t inode_id);
+int dir_get_record_by_filename(dir_t *dir, const char * filename);
+
+int dir_find_record_by_filename(dir_t *dir, const char * filename);
+
 int dir_del_record_by_filename(dir_t *dir, const char* filename);
 int dir_del_record_by_ino(dir_t *dir, uint32_t ino);
 
 // int dir_get_record();
 
-void dir_print();
+void dir_print(dir_t *);
 
+void dir_test();
 //
 // int32_t dir_get_inode(const char *path, inode_t * inode);
 // dir_t * open_root_dir();

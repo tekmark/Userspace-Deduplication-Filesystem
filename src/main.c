@@ -383,6 +383,7 @@ int main ( int  argc, char *argv[] ) {
     // ---------------------------------------
 
     container_test();
+    dir_test();
     //NOTE: put test functions here
     exit(EXIT_SUCCESS);
 }

@@ -1,22 +1,110 @@
 #include "directory.h"
 
+void dir_read_record_from_buf(uint8_t *buf, int offset, dir_record_t *r);
+
 int dir_add_record(dir_t *dir, const char* filename, uint32_t inode_id) {
     lfs_stat_t *stat = get_lfs_stat();
+    assert(stat);
+
     if (strlen(filename) > MAX_FILENAME_LEN) {
         return -1;
     }
 
     int size = *dir->size;
-    int offset = size * stat->blk_size;
+    int offset = size * DIR_RECORD_LEN;
     // memset(dir->records + offset, 0, DIR_RECORD_LEN);        //reset
     memcpy(dir->records + offset, filename, strlen(filename) + 1);
     memcpy(dir->records + offset + DIR_RECORD_INO_OFFSET, &inode_id, sizeof(uint32_t));
-}
-int dir_del_record_by_filename(dir_t *dir, const char* filename) {
 
+    //update # of entries.
+    *dir->size += 1;
+    //return inserted record position;
+    return size;
 }
+
+int dir_find_record_by_filename(dir_t *dir, const char * filename) {
+    int size = *dir->size;
+    int bytes = size * DIR_RECORD_LEN + sizeof(uint32_t);
+
+    int i = 0;
+    while (i < size) {
+        dir_record_t dir_r;
+        dir_read_record_from_buf(dir->records, i * DIR_RECORD_LEN, &dir_r);
+        if (!strcmp(filename, dir_r.filename)) {
+            return i;
+        } else {
+            ++i;
+        }
+    }
+    return -1;
+}
+
+int dir_del_record_by_filename(dir_t *dir, const char* filename) {
+    int size = *dir->size;
+    int bytes = size * DIR_RECORD_LEN + sizeof(uint32_t);
+
+    int recno = dir_find_record_by_filename(dir, filename);
+    if (recno < 0) {
+        return recno;
+    }
+    if (recno < size - 1) {
+        int buf_size = (size - recno - 1) * DIR_RECORD_LEN;
+        uint8_t *tmp = (uint8_t*)malloc(buf_size);
+        int offset = (recno + 1) * DIR_RECORD_LEN;
+        //copy to tmp.
+        memcpy(tmp, dir->records + offset, buf_size);
+        memcpy(dir->records + recno * DIR_RECORD_LEN, tmp, buf_size);
+    }
+    *dir->size -= 1;
+    return recno;
+}
+
 int dir_del_record_by_ino(dir_t *dir, uint32_t ino) {
 
+}
+
+//local helper function.
+void dir_read_record_from_buf(uint8_t *buf, int offset, dir_record_t *r) {
+    memcpy(r->filename, buf + offset, MAX_FILENAME_LEN);
+    memcpy(&r->inode_id, buf + offset + DIR_RECORD_INO_OFFSET, sizeof(uint32_t));
+}
+
+void dir_print(dir_t *dir) {
+    int size = *dir->size;
+    logger_debug("# of files in directory : %d", size);
+    int i;
+    for (i = 0; i < size; ++i) {
+        dir_record_t dir_r;
+        int offset = i * DIR_RECORD_LEN;
+        dir_read_record_from_buf(dir->records, offset, &dir_r);
+        logger_debug("#%d - filename=>%s, inode=>%d", i, dir_r.filename,
+            dir_r.inode_id);
+    }
+}
+
+void dir_test() {
+    dir_t dir;
+    dir.buffer = (uint8_t*)malloc(4096);
+    dir.size = (uint32_t*)dir.buffer;
+    dir.records = (uint8_t*)(dir.buffer + sizeof(uint32_t));
+    dir_add_record(&dir, "i am file1", 1);
+    dir_add_record(&dir, "i am file2", 2);
+    int ret0 = dir_find_record_by_filename(&dir, "i am file1");
+    logger_debug("RETURN: %d", ret0);
+
+    int ret = dir_del_record_by_filename(&dir, "i am file2");
+    if (ret >= 0) {
+        logger_debug("Delete record #%d", ret);
+    } else {
+        logger_debug("Failed to delete file: %s", "i am file2");
+    }
+    ret = dir_del_record_by_filename(&dir, "i am file1");
+    if (ret >= 0) {
+        logger_debug("Delete record #%d", ret);
+    } else {
+        logger_debug("Failed to delete file: %s", "i am file1");
+    }
+    dir_print(&dir);
 }
 
 //
