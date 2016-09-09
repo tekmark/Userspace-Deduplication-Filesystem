@@ -2,16 +2,20 @@
 #define UTIL_H_
 
 //#include<openssl/sha.h>
-#include<stdio.h>
-#include<stdint.h>
-#include<stdlib.h>
-#include<string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
+// #include "lfs_stat.h"
 #include "container_types.h"
 #include "fingerprint.h"
+#include "logger.h"
 
 void util_test();
+
+// extern lfs_stat_t;
 
 //helper functions for fingerprint.
 // fingerprint_t * fp_cpy(fingerprint_t *dest, fingerprint_t *src);
@@ -32,5 +36,6 @@ void string_toupper(char *str);
 
 //file size calculator
 //uint32_t calculate_lfs_file_size(int blk_size, int container_blk_num, int container_num);
+// void print_lfs_stat(lfs_stat_t *stat);
 
 #endif

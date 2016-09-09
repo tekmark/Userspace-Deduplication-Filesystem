@@ -328,9 +328,8 @@ segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp) {
         logger_debug("Failed to find fingerprint[%s] in header", fp_readable);
         return NULL;
     }
-    logger_debug("seg_no: %d", ret);
     int offset = r.blk_offset * stat->blk_size;
-    logger_debug("SEG SIZE: %d", r.seg_size);
+    // logger_debug("SEG SIZE: %d", r.seg_size);
     segment_t * seg = seg_alloc(r.seg_size);
 
     memcpy(seg->data, container->buffer + offset, r.seg_size);

@@ -10,7 +10,7 @@
 #include "util.h"
 #include "uthash.h"
 
-#define MAX_FILENAME_LEN 256
+// #define MAX_FILENAME_LEN 256
 
 //typedef struct container container_t;
 /*

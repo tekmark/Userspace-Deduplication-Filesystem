@@ -4,7 +4,6 @@ segment_t * seg_alloc(int seg_size) {
     segment_t *seg = (segment_t*)malloc(sizeof(segment_t));
     seg->size = seg_size;
     seg->data = (uint8_t*)malloc(seg_size * sizeof(uint8_t));
-
     return seg;
 }
 

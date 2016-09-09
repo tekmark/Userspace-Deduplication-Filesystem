@@ -177,10 +177,14 @@ int main ( int  argc, char *argv[] ) {
             summary.containers = c_default_containers;
             summary.filesystem_size = summary.blk_size * summary.sys_reserved_blks +
                                 summary.container_size * summary.containers;
-            //TODO: hard coded here.
-            summary.ns_stat_offset = 1024;
 
-            //alloct buffer
+            //TODO: don't hard coded here.
+            summary.ns_stat_offset = 1024;
+            //inode
+            summary.inodemap_size = 0;
+            summary.inodemap_offset = 2048;
+
+            //allocate buffer
             uint32_t lfs_filesize = summary.filesystem_size;
             char *buffer = malloc(lfs_filesize);
             memset((void*) buffer, 0, lfs_filesize);
@@ -233,20 +237,21 @@ int main ( int  argc, char *argv[] ) {
     stat->ns_stat_offset = summary.ns_stat_offset;
     // set size of filesystem, in bytes.
     stat->size = summary.filesystem_size;
-
-    //TODO: create a print function
-    logger_info("Block size (in bytes)      : %d", stat->blk_size);
-    logger_info("Container size (in bytes)  : %d", stat->container_size);
-    logger_info("# of system reserved block : %d", stat->sys_reserved_blks);
-    logger_info("# of blocks per container  : %d", stat->blks_per_container);
-    logger_info("# of containers            : %d", stat->containers);
-    logger_info("namespace status offset    : %d", stat->ns_stat_offset);
+    //inode map.
+    //stat->inodemap_size = summary.inodemap_size;
+    //inode map
+    inodemap_t *inodemap = new_inodemap();
+    inodemap->stat->tbl_size = summary.inodemap_size;
+    inodemap->stat->tbl_offset = summary.inodemap_offset;
+    stat->imap = inodemap;
 
     //namespace
     //alloc memeory for namespace.
     ns_t *namespace = new_namespace();
     //read namespace status on disk.
     int ret = ns_stat_read_disk(namespace->ns_stat);
+
+    lfs_stat_print();
 
     // namespace->ns_stat->size = 1;
     // ns_stat_write_disk(namespace->ns_stat);
@@ -265,6 +270,19 @@ int main ( int  argc, char *argv[] ) {
 
     //assign prointer points to namespace
     stat->ns = namespace;
+
+    if (stat->imap->stat->tbl_size == 0) {
+        // logger_debug("inodemap table size is %d", stat->imap->stat->tbl_size);
+        inodemap_r_t r;
+        r.ino = 0;
+        r.cid = 456;
+        r.blk_offset = 789;
+        inodemap_add_record(&r);
+        inodemap_r_t r2;
+        inodemap_get_record(0, &r2);
+    } else {
+        logger_debug("inodemap table size is %d", stat->imap->stat->tbl_size);
+    }
 
     //if there are entries in namespace
     //ns_table is not empty.
@@ -361,7 +379,7 @@ int main ( int  argc, char *argv[] ) {
 //    logger_info("LFS file created. location: %s, size: %d", lfs_filename, lfs_filesize);
     // c_header_test();
     // ---------------------------------------
-    
+
     // ---------------------------------------
 
     container_test();

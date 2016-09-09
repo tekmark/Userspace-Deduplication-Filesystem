@@ -74,7 +74,7 @@ int ns_stat_write_disk (ns_stat_t *ns_stat);
 
 //int ns_update_record();
 // get
-int ns_get_record();
+// int ns_get_record();
 // add / update to hashtable and write to disk.
 int ns_add_record(ns_r_t *t);
 

@@ -7,12 +7,18 @@ lfs_stat_t * get_lfs_stat() {
     return &stat;
 }
 
-void print_lfs_stat() {
-    printf("File discriptor (fd)       : %d\n", stat.fd);
-    printf("filesystem size (in bytes) : %d\n", stat.size);
-    printf("block size (in bytes)      : %d\n", stat.blk_size);
-    printf("container size (in bytes)  : %d\n", stat.container_size);
-    printf("# of system reserved block : %d\n", stat.sys_reserved_blks);
-    printf("# of blocks per container  : %d\n", stat.blks_per_container);
-    printf("# of containers            : %d\n", stat.containers);
+void lfs_stat_print() {
+    logger_info("-------------------------------------------");
+    logger_info("File discriptor (fd)       : %d", stat.fd);
+    logger_info("Filesystem size (in bytes) : %d", stat.size);
+    logger_info("Block size (in bytes)      : %d", stat.blk_size);
+    logger_info("Container size (in bytes)  : %d", stat.container_size);
+    logger_info("# of system reserved block : %d", stat.sys_reserved_blks);
+    logger_info("# of blocks per container  : %d", stat.blks_per_container);
+    logger_info("# of containers            : %d", stat.containers);
+    logger_info("namespace status offset    : %d", stat.ns_stat_offset);
+
+    logger_info("inodemap offset            : %d", stat.imap->stat->tbl_offset);
+    logger_info("# of inodemap entries      : %d", stat.imap->stat->tbl_size);
+    logger_info("-------------------------------------------");
 }

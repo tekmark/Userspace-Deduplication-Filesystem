@@ -1,4 +1,24 @@
-// #include "directory.h"
+#include "directory.h"
+
+int dir_add_record(dir_t *dir, const char* filename, uint32_t inode_id) {
+    lfs_stat_t *stat = get_lfs_stat();
+    if (strlen(filename) > MAX_FILENAME_LEN) {
+        return -1;
+    }
+
+    int size = *dir->size;
+    int offset = size * stat->blk_size;
+    // memset(dir->records + offset, 0, DIR_RECORD_LEN);        //reset
+    memcpy(dir->records + offset, filename, strlen(filename) + 1);
+    memcpy(dir->records + offset + DIR_RECORD_INO_OFFSET, &inode_id, sizeof(uint32_t));
+}
+int dir_del_record_by_filename(dir_t *dir, const char* filename) {
+
+}
+int dir_del_record_by_ino(dir_t *dir, uint32_t ino) {
+
+}
+
 //
 // // get the inode of a path
 // int32_t dir_get_inode(const char *path, inode_t * inode){

@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "namespace.h"
+#include "inodemap.h"
 //disk
 //             container_start_blk
 //                      |
@@ -30,6 +31,10 @@ struct lfs_stat {
     //TODO: *namespace
     // ns_stat_t *ns_stat;                   //
     ns_t *ns;
+
+    int inodemap_size;
+    int inodemap_offset;
+    inodemap_t *imap;
 };
 
 typedef struct lfs_stat lfs_stat_t;
@@ -46,6 +51,7 @@ typedef struct lfs_stat lfs_stat_t;
 //typedef struct lfs_summary lfs_summary_t;
 
 lfs_stat_t * get_lfs_stat();
-void print_lfs_stat();
+void lfs_stat_print();
+
 
 #endif

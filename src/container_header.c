@@ -7,12 +7,8 @@ const uint32_t c_c_header_size = sizeof(container_header_t);
 void c_header_test() {
     logger_debug("TESTING container header ...");
 
-    // printf("header size: %d\n", c_c_header_size);
-    // container_header_t header;
-
-    //conatiner should be allocated by conatiner alloc function.
-    //char * container_buf = (char *)malloc()
     char *buffer = (char*)malloc(c_default_blk_size * c_default_blks_per_container);
+    
     container_header_t *header = new_container_header(buffer);
     logger_debug("DEBUG");
     *header->id = 1;
