@@ -1,5 +1,9 @@
 #include "directory.h"
 
+const char *cur_dir_str = ".";
+const char *parent_dir_str = "..";
+const char *root_dir_str = "/";
+
 void dir_read_record_from_buf(uint8_t *buf, int offset, dir_record_t *r);
 
 int dir_add_record(dir_t *dir, const char* filename, uint32_t inode_id) {
@@ -105,6 +109,11 @@ void dir_test() {
         logger_debug("Failed to delete file: %s", "i am file1");
     }
     dir_print(&dir);
+}
+
+
+void dir_create_root() {
+
 }
 
 //

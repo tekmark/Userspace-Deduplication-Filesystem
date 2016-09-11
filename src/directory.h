@@ -21,6 +21,12 @@
 #define DIR_RECORD_INO_OFFSET 256
 //#define NUM_OF_RECORD_PER_SEG 15
 
+#define DIR_ROOT_INO 0
+
+extern const char *cur_dir_str;
+extern const char *parent_dir_str;
+extern const char *root_dir_str;
+
 #define SUCCESS 0
 #define FAIL   -1
 
@@ -54,6 +60,8 @@ int dir_del_record_by_ino(dir_t *dir, uint32_t ino);
 void dir_print(dir_t *);
 
 void dir_test();
+
+void dir_create_root();
 //
 // int32_t dir_get_inode(const char *path, inode_t * inode);
 // dir_t * open_root_dir();
