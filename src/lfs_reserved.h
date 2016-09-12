@@ -2,6 +2,7 @@
 #define LFS_RESERVED_H
 
 #include <stdint.h>
+#include <constants.h>
 
 //this is used when mount an existing file
 //this struct is stored at (blk_0, byte_0).
@@ -24,5 +25,7 @@ struct lfs_summary {
 };
 
 typedef struct lfs_summary lfs_summary_t;
+
+void sys_rsvd_set_to_defaults (lfs_summary_t *summary);
 
 #endif

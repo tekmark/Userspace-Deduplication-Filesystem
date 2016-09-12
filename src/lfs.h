@@ -16,6 +16,7 @@
 #include"inode.h"
 #include"global.h"
 #include "lfs_reserved.h"
+#include "lfs_stat.h"
 #include"directory.h"
 #include "namespace.h"
 #include "inodemap.h"
