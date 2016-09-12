@@ -38,6 +38,7 @@ void lfs_init();
 int lfs_startup(const char * filename);
 int lfs_file_create(const char *filename);
 
+void lfs_test();
 //TODO: call fuse_main();
 int lfs_main ();
 

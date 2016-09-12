@@ -16,6 +16,8 @@ int dir_add_record(dir_t *dir, const char* filename, uint32_t inode_id) {
 
     int size = *dir->size;
     int offset = size * DIR_RECORD_LEN;
+    logger_debug("Dir add filename=>%s, inode=>%d, offset=>%d",
+                    filename, inode_id, offset);
     // memset(dir->records + offset, 0, DIR_RECORD_LEN);        //reset
     memcpy(dir->records + offset, filename, strlen(filename) + 1);
     memcpy(dir->records + offset + DIR_RECORD_INO_OFFSET, &inode_id, sizeof(uint32_t));
@@ -86,34 +88,65 @@ void dir_print(dir_t *dir) {
     }
 }
 
-void dir_test() {
-    dir_t dir;
-    dir.buffer = (uint8_t*)malloc(4096);
-    dir.size = (uint32_t*)dir.buffer;
-    dir.records = (uint8_t*)(dir.buffer + sizeof(uint32_t));
-    dir_add_record(&dir, "i am file1", 1);
-    dir_add_record(&dir, "i am file2", 2);
-    int ret0 = dir_find_record_by_filename(&dir, "i am file1");
-    logger_debug("RETURN: %d", ret0);
 
-    int ret = dir_del_record_by_filename(&dir, "i am file2");
+dir_t * new_dir(int parent_ino, int cur_ino) {
+    dir_t * dir = (dir_t*)malloc(sizeof(dir_t));
+    dir->buffer = (uint8_t*)malloc(4096);
+    memset(dir->buffer, 0, 4096);
+    dir->size = (uint32_t*)dir->buffer;
+    dir->records = (uint8_t*)(dir->buffer + sizeof(uint32_t));
+    // printf("DEBUGXX");
+    int ret = dir_add_record(dir, cur_dir_str, cur_ino);
+    if (ret < 0) {
+        logger_error("Failed to add current dir entry to dir");
+        return NULL;
+    }
+    ret = dir_add_record(dir, parent_dir_str, cur_ino);
+    if (ret < 0) {
+        logger_error("Failed to add parent dir entry to dir");
+        return NULL;
+    }
+    return dir;
+}
+
+int dir_read_from_buf(uint8_t *buffer, dir_t *dir) {
+
+}
+
+dir_t * new_dir_by_buf(uint8_t *buffer) {
+    dir_t *dir = (dir_t*)malloc(sizeof(dir_t));
+    dir->buffer = buffer;
+    dir->size = (uint32_t*)dir->buffer;
+    dir->records = (uint8_t*)(dir->buffer + sizeof(uint32_t));
+    return dir;
+}
+
+void del_dir(dir_t *dir) {
+    free(dir->buffer);
+    free(dir);
+}
+
+void dir_test() {
+    dir_t *dir = new_dir(DIR_ROOT_INO, DIR_ROOT_INO);
+    dir_add_record(dir, "i am file1", 1);
+    dir_add_record(dir, "i am file2", 2);
+    int ret0 = dir_find_record_by_filename(dir, "i am file1");
+    logger_debug("RETURN: %d", ret0);
+    dir_print(dir);
+
+    int ret = dir_del_record_by_filename(dir, "i am file2");
     if (ret >= 0) {
         logger_debug("Delete record #%d", ret);
     } else {
         logger_debug("Failed to delete file: %s", "i am file2");
     }
-    ret = dir_del_record_by_filename(&dir, "i am file1");
+    ret = dir_del_record_by_filename(dir, "i am file1");
     if (ret >= 0) {
         logger_debug("Delete record #%d", ret);
     } else {
         logger_debug("Failed to delete file: %s", "i am file1");
     }
-    dir_print(&dir);
-}
-
-
-void dir_create_root() {
-
+    dir_print(dir);
 }
 
 //

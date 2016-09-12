@@ -225,7 +225,7 @@ int container_read_blk(container_t *container, int blk_num, uint8_t* blk) {
 int container_write_blk(container_t *container, uint8_t * blk, int blk_num) {
     lfs_stat_t *stat = get_lfs_stat();
     assert(stat);
-
+    logger_debug("Writed Block to Contaienr#%d", *container->header->id);
     int offset = blk_num * stat->blk_size;
     memcpy(container->buffer + offset, blk, stat->blk_size);
     return 0;
@@ -340,6 +340,14 @@ segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp) {
 void container_print(container_t *container) {
     // logger_debug("Container:");
     container_header_print(container->header);
+}
+
+int container_read_dir(container_t *container, int blk_offset, dir_t *dir) {
+
+}
+
+int container_write_dir(container_t *container, int blk_offset, dir_t *dir) {
+
 }
 
 // int conatainer_get_seg(container_t *container, int blk_offset)

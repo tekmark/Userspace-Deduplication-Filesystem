@@ -3,10 +3,11 @@
 
 #include <stdint.h>
 
-#include "global.h"
+// #include "global.h"
 #include "util.h"
 #include "inode.h"
 #include "logger.h"
+#include "lfs_stat.h"
 
 /*
     | # of files in direcory |
@@ -60,6 +61,13 @@ int dir_del_record_by_ino(dir_t *dir, uint32_t ino);
 void dir_print(dir_t *);
 
 void dir_test();
+
+dir_t * new_dir(int parent_ino, int cur_ino);
+// int dir_read_from_buffer(uint8_t *buffer, dir_t *dir);
+
+dir_t * new_dir_by_buf(uint8_t *buf);
+int dir_read_from_buf(uint8_t *buffer, dir_t *dir);
+
 
 void dir_create_root();
 //

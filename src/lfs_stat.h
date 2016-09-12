@@ -40,7 +40,7 @@ struct lfs_stat {
 
 typedef struct lfs_stat lfs_stat_t;
 
-int lfs_stat_init(lfs_summary_t *summary);
+int lfs_stat_init(int fd, lfs_summary_t *summary);
 //status of filesystem, which is global.
 // extern lfs_stat_t stat;
 // lfs_stat_t *g_stat;

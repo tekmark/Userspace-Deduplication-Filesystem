@@ -8,12 +8,13 @@
 
 #include "container_header.h"
 #include "container_utility.h"
-#include "global.h"
+// #include "global.h"
 #include "util.h"
-#include "lfs.h"
+// #include "lfs.h"
 #include "lfs_stat.h"
 #include "logger.h"
 #include "segment.h"
+#include "directory.h"
 
 
 /*
@@ -102,5 +103,11 @@ void container_print_header(container_t * container);
 segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp);
 
 void container_print(container_t *container);
+
+int container_write_blk(container_t *container, uint8_t * blk, int blk_num);
+int container_read_blk(container_t *container, int blk_num, uint8_t* blk);
+
+int container_read_dir(container_t *container, int blk_offset, dir_t *dir);
+int container_write_dir(container_t *container, int blk_offset, dir_t *dir);
 
 #endif

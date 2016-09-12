@@ -17,6 +17,7 @@ static struct fuse_operations lfs_oper = {
 };
 */
 
+void lfs_build_root_dir();
 
 //set defaults
 int lfs_file_create(const char *filename) {
@@ -91,12 +92,44 @@ int lfs_startup(const char *filename) {
     logger_info("Read system reserved block on disk.");
     //TODO : check if error exists.
 
-    lfs_stat_t *stat = get_lfs_stat();
-    assert(stat);
-    //set fp
-    stat->fd = fd;
-    lfs_stat_init(&summary);
+    // lfs_stat_t *stat = get_lfs_stat();
+    // assert(stat);
+
+    lfs_stat_init(fd, &summary);
     lfs_stat_print();
+    lfs_build_root_dir();
+    return 0;
+}
+
+void lfs_build_root_dir() {
+    logger_debug("Building Root Directory ...");
+    container_t *c = container_alloc();
+    assert(c);
+    dir_t *root_dir = new_dir(0, 0);
+    assert(root_dir);
+    int blk_offset = 1;
+    //TODO: a method to add dir to contaienr.
+    container_write_blk(c, root_dir->buffer, blk_offset);
+    //add inode to inode map
+    inodemap_r_t r;
+    r.ino = 0;
+    r.cid = 0;
+    r.blk_offset = blk_offset;
+    inodemap_add_record(&r);
+
+    container_write(c);
+    container_free(c);
+}
+
+void lfs_test() {
+    container_t *c = container_alloc();
+    container_read(0, c);
+    uint8_t *blk = (uint8_t*)malloc(4096);
+    container_read_blk(c, 1, blk);
+
+    dir_t *dir = new_dir_by_buf(blk);
+    logger_debug("size=>%d", *dir->size);
+    dir_print(dir);
 }
         //assign fields
         // int tbl_size = stat->ns->ns_stat->size;

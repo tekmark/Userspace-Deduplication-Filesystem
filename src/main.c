@@ -7,6 +7,7 @@
 
 #include "constants.h"
 #include "lfs_stat.h"
+#include "lfs.h"
 #include "lfs_reserved.h"
 #include "logger.h"
 #include "util.h"
@@ -138,6 +139,8 @@ int main ( int  argc, char *argv[] ) {
     }
 
     lfs_startup(lfs_filename);
+
+    lfs_test();
     //
     // //Initialization.
     // logger_debug("Filename: %s, Mount location: %s", lfs_filename, mount_path);
@@ -377,8 +380,8 @@ int main ( int  argc, char *argv[] ) {
     //     logger_debug("fingerprint: %s", r2.fp.fingerprint);
     //     */
     // }
-    container_test();
-    dir_test();
+    //container_test();
+    //dir_test();
     //NOTE: put test functions here
     exit(EXIT_SUCCESS);
 }
