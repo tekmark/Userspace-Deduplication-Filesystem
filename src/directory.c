@@ -3,6 +3,7 @@
 const char *cur_dir_str = ".";
 const char *parent_dir_str = "..";
 const char *root_dir_str = "/";
+const char *root_path = "/";
 
 void dir_read_record_from_buf(uint8_t *buf, int offset, dir_record_t *r);
 

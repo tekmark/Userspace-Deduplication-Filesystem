@@ -27,6 +27,7 @@
 extern const char *cur_dir_str;
 extern const char *parent_dir_str;
 extern const char *root_dir_str;
+extern const char *root_path;
 
 #define SUCCESS 0
 #define FAIL   -1

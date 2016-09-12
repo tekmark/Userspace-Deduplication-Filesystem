@@ -20,6 +20,7 @@
 #include"directory.h"
 #include "namespace.h"
 #include "inodemap.h"
+#include "lfs_operations.h"
 
 //configure struct for lfs.
 typedef struct {
@@ -38,7 +39,7 @@ void lfs_init();
 int lfs_startup(const char * filename);
 int lfs_file_create(const char *filename);
 
-void lfs_test();
+int lfs_test();
 //TODO: call fuse_main();
 int lfs_main ();
 

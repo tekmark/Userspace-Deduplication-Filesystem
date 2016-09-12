@@ -140,7 +140,7 @@ int main ( int  argc, char *argv[] ) {
 
     lfs_startup(lfs_filename);
 
-    lfs_test();
+    return lfs_test();
     //
     // //Initialization.
     // logger_debug("Filename: %s, Mount location: %s", lfs_filename, mount_path);
