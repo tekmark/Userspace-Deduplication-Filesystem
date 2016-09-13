@@ -21,6 +21,7 @@
 #include "namespace.h"
 #include "inodemap.h"
 #include "lfs_operations.h"
+#include "container.h"
 
 //configure struct for lfs.
 typedef struct {

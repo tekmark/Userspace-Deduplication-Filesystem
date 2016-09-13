@@ -22,10 +22,6 @@ typedef struct {
   uint32_t blk_offset;
 } indirect_blk_t;
 */
-/* struct of inode
-  see struct stat in <sys/stat.h>
- */
-
  /*
 typedef struct inode {
   uint32_t inode_id;
@@ -47,24 +43,27 @@ typedef struct inode {
 
 } inode_t;
 */
-//
-// struct inode {
-//     /*in use*/
-//     uint32_t st_ino;
-//     uint32_t st_mode;           //rwx, file or directory
-//     uint32_t st_size;           //file size in byte.
-//     /*TODO: to implement*/
-//     uint32_t st_nlink;
-//     uint32_t owner;             //uid of owner
-//     time_t st_ctime;            //inode change time
-//     time_t st_mtime;            //file content last modification time
-//     time_t st_atime;            //file content last access time
-//
-//   // uint32_t direct_blk[DIRECT_BLK_NUM];
-//   // uint32_t file_recipe;      //position of file recipe
-//   // indirect_blk_t recipe_blk;
-// };
-// typedef struct inode inode_t;
+
+/* struct of inode
+ * see struct stat in <sys/stat.h>
+ */
+struct inode {
+    /*in use*/
+    uint32_t st_ino;
+    uint32_t st_mode;           //rwx, file or directory
+    uint32_t st_size;           //file size in byte.
+    /*TODO: to implement*/
+    uint32_t st_nlink;
+    uint32_t owner;             //uid of owner
+    time_t st_ctm;            //inode change time
+    time_t st_mtm;            //file content last modification time
+    time_t st_atm;            //file content last access time
+
+  // uint32_t direct_blk[DIRECT_BLK_NUM];
+  // uint32_t file_recipe;      //position of file recipe
+  // indirect_blk_t recipe_blk;
+};
+typedef struct inode inode_t;
 /*
 typedef struct {
   uint32_t seg_num;

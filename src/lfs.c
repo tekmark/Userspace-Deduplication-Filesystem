@@ -109,9 +109,10 @@ void lfs_build_root_dir() {
   * This will be called for the access() system call. If the 'default_permissions'
   * mount option is given, this method is not called.
   * This method is not called under Linux kernel versions 2.4.x, Introduced in version 2.5
-  */  
+  */
 static int lfs_access (const char *path, int mask) {
-  logger_debug("Entry: lfs_access()");
+  logger_debug("Entry: lfs_access(). path=>%s", path);
+  return 0;
 //   printf ("++++++++++++++++++++++++++++++++++Path = %s\n", path);
 //   if (strcmp (path, lfs_info->cur_path) == 0) {
 //     //get_inode_from_inode_id (lfs_info->cur_inode, 1);
@@ -171,20 +172,12 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
     logger_debug ("!!Enter: lfs_getattr function, path=>%s", path);
     int res = 0;
     memset(stbuf, 0, sizeof(struct stat));
-  // if path is root
-  // if(strcmp(path, root_path) == 0 ){
-    //   logger_debug("Root direcotry");
-    //   stbuf->st_size = 4096;
-    //   stbuf->st_mode = 0777;
-    //   stbuf->st_nlink = 2;
-    //   return 0;
-  // }
     //if path is root
     if (strcmp(path, root_path) == 0) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_size = 4096;
         stbuf->st_nlink = 2;
-    } else if (strcmp(path, "HelloWorld") == 0) {
+    } else if (strcmp(path, "HelloWorld") == 0) {       //TODO: update.
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
         stbuf->st_size = strlen("hello world");
@@ -234,10 +227,47 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
   return res;
 }
 
+/** Open directory
+  * Unless the 'default_permissions' mount option is given, this method should
+  * check if opendir is permitted for this directory. Optionally opendir may
+  * also return an arbitrary filehandle in the fuse_file_info structure,
+  * which will be passed to readdir, closedir and fsyncdir.
+  */
+static int lfs_opendir(const char *path, struct fuse_file_info *fi) {
+    logger_debug("lfs_opendir(), path=>%s", path);
+    return 0;
+}
 
+/** Read directory
+  * The filesystem may choose between two modes of operation:
+  * 1)The readdir implementation ignores the offset parameter, and passes zero
+  *   to the filler function's offset. The filler function will not return '1'
+  *   (unless an error happens), so the whole directory is read in a single
+  *   readdir operation.
+  * 2)The readdir implementation keeps track of the offsets of the directory
+  *   entries. It uses the offset parameter and always passes non-zero offset
+  *   to the filler function. When the buffer is full (or an error happens) the
+  *   filler function will return '1'.
+  **/
 static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi){
-  printf("lfs_readdir: enter\n");
+
+    logger_debug("lfs_readdir(): enter path: %s", path);
+    inode_t i;
+    i.st_ino = 0;
+
+    uint32_t cid = 0;
+    uint32_t blk_off = 1;
+
+    // dir_t dir;
+    container_t *c = container_alloc();
+    container_read(cid, c);
+    container_print(c);
+    uint8_t *blk = (uint8_t*)malloc(4096);
+    container_read_blk(c, 1, blk);
+
+    dir_t *dir = new_dir_by_buf(blk);
+    dir_print(dir);
 //   (void) offset;
 //   (void) fi;
 //   //struct file_inode_hash *s;
@@ -351,6 +381,7 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
 struct fuse_operations lfs_oper = {
     .getattr    = lfs_getattr,
     // .mkdir      = lfs_mkdir,
+    .opendir    = lfs_opendir,
     .readdir    = lfs_readdir,
     .open       = lfs_open,
     .read       = lfs_read,
@@ -365,11 +396,12 @@ struct fuse_operations lfs_oper = {
 int lfs_test() {
     container_t *c = container_alloc();
     container_read(0, c);
+    container_print(c);
     uint8_t *blk = (uint8_t*)malloc(4096);
     container_read_blk(c, 1, blk);
 
     dir_t *dir = new_dir_by_buf(blk);
-    logger_debug("size=>%d", *dir->size);
+    //logger_debug("size=>%d", *dir->size);
     dir_print(dir);
     int fuse_argc = 3;
     char *fuse_argv[] = {"-f", "/tmp/fuse", "-d"};
