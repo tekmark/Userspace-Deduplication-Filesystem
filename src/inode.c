@@ -1,11 +1,11 @@
 #include"inode.h"
 
 int inode_write_buf(char *buf, int offset, inode_t *inode) {
-    memcpy(buf + offset, inode, sizeof(inode));
+    memcpy(buf + offset, inode, sizeof(inode_t));
     return 0;
 }
 int inode_read_buf(char *buf, int offset, inode_t *inode) {
-    memcpy(inode, buf + offset, sizeof(inode));
+    memcpy(inode, buf + offset, sizeof(inode_t));
     return 0;
 }
 

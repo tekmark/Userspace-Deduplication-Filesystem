@@ -31,6 +31,8 @@ struct lfs_stat {
     int ns_stat_offset;
 
     int cur_ino;
+    int prarent_ino;
+
     //TODO: *namespace
     // ns_stat_t *ns_stat;                   //
     ns_t *ns;

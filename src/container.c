@@ -225,7 +225,7 @@ int container_read_blk(container_t *container, int blk_num, uint8_t* blk) {
 int container_write_blk(container_t *container, uint8_t * blk, int blk_num) {
     lfs_stat_t *stat = get_lfs_stat();
     assert(stat);
-    logger_debug("Writed Block to Contaienr#%d", *container->header->id);
+    logger_debug("Writed Block#%d to Contaienr#%d", blk_num, *container->header->id);
     int offset = blk_num * stat->blk_size;
     memcpy(container->buffer + offset, blk, stat->blk_size);
     return 0;

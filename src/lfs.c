@@ -87,7 +87,9 @@ int lfs_startup(const char *filename) {
 
     lfs_stat_init(fd, &summary);
     lfs_stat_print();
+    logger_debug("debug");
     lfs_build_root_dir();
+    logger_debug("lfs started");
     return 0;
 }
 
@@ -104,7 +106,15 @@ void lfs_build_root_dir() {
     inode_root(&root_inode);
     int blk_offset = 1;
     root_inode.direct_blk_no  = calculate_blk_no(stat, 0, 2);
+    logger_debug("direct_blk_no＝>%d", root_inode.direct_blk_no);
     container_write_blk(c, (void*)&root_inode, blk_offset);
+
+    inode_t inode;
+    memset(&inode, 0, sizeof(inode_t));
+    uint8_t *blk_buf = (uint8_t*)malloc(4096);
+    container_read_blk(c, blk_offset, blk_buf);
+    inode_read_buf(blk_buf, 0, &inode);
+    logger_debug("inode[ino=>%d, size=>%d]", inode.st_ino, inode.st_size);
 
     //
     dir_t *root_dir = new_dir(DIR_ROOT_INO, DIR_ROOT_INO);
@@ -120,6 +130,7 @@ void lfs_build_root_dir() {
 
     container_write(c);
     container_free(c);
+    logger_debug("root inode added");
 }
 /**
   * Check file access permissions
@@ -200,10 +211,14 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
     } else {
         const char *filename = get_filename(path);
         logger_debug("filename=>%s", filename);
+        if (strcmp(filename, "aaa") == 0) {
+            stbuf->st_ino = 1999;
+            return 0;
+        }
         //lookup filename in current path.
         //return -ENOENT if entry do not exist.
         //return -EEXIST if file exists
-        res = -EEXIST;
+        res = -ENOENT;
     }
     // if (strcmp(path, "HelloWorld") == 0) {       //TODO: update.
     //     stbuf->st_mode = S_IFREG | 0444;
@@ -332,6 +347,54 @@ static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   */
 static int lfs_mkdir(const char *path, mode_t mode){
     logger_debug("lfs_mkdir(), path=>%s", path);
+
+    //lookup current inode location from inode map.
+    //hard coded.
+    int ino = 1;
+    int cid = 0;
+    int blk_off = 1;
+
+    //read container(metadata) from disk.
+    container_t *c = container_alloc();
+    container_read(0, c);
+    container_print(c);
+    //read blk(inode) from container.
+    uint8_t *blk = (uint8_t*)malloc(4096);
+    container_read_blk(c, 1, blk);
+    //fill inode fields
+    inode_t inode;
+    //inode_read_buf(blk, 0, &inode);
+    inode_read_buf(blk, 0, &inode);
+    logger_debug("inode [ino=>%d, size=>%d, direct_blk_no=>%d]",
+                    inode.st_ino, inode.st_size, inode.direct_blk_no);
+    //get cid & blk_offset from blk_no.
+    cid = 0;
+    int blk_offset = 2;
+    //construct dir from blk.
+    if (cid == *c->header->id) {
+        logger_debug("direct blk container has been read.");
+        memset(blk, 0, 4096);
+        container_read_blk(c, 2, blk);
+
+        dir_t *dir = new_dir_by_buf(blk);
+        const char *name = get_filename(path);
+        int test_ino = 198;
+        dir_add_record(dir, name, test_ino);
+
+        inode_t new_inode;
+        new_inode.st_ino = 0;
+        new_inode.st_size = 4096;
+        memset(blk, 0, 4096);
+        inode_write_buf(blk, 0, &new_inode);
+        container_write_blk(c, blk, 3);
+        dir_print(dir);
+    } else {
+        logger_debug("read other container");
+    }
+
+    //free allocated memory.
+    free(blk);
+    container_free(c);
     return 0;
 }
 /** Open directory
@@ -518,7 +581,7 @@ int lfs_test() {
     container_read(0, c);
     container_print(c);
     uint8_t *blk = (uint8_t*)malloc(4096);
-    container_read_blk(c, 1, blk);
+    container_read_blk(c, 2, blk);
 
     dir_t *dir = new_dir_by_buf(blk);
     //logger_debug("size=>%d", *dir->size);
