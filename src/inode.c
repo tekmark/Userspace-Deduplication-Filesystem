@@ -1,4 +1,21 @@
-// #include"inode.h"
+#include"inode.h"
+
+int inode_write_buf(char *buf, int offset, inode_t *inode) {
+    memcpy(buf + offset, inode, sizeof(inode));
+    return 0;
+}
+int inode_read_buf(char *buf, int offset, inode_t *inode) {
+    memcpy(inode, buf + offset, sizeof(inode));
+    return 0;
+}
+
+int inode_root(inode_t *inode) {
+    inode->st_ino = 1;
+    inode->st_mode = S_IFDIR | 0777;
+    inode->st_size = 4096;
+    inode->direct_blk_no = 3;
+}
+
 // //#include"lfs.h"
 //
 // uint32_t filerecipe_add_entry(file_recipe_t *filerecipe, file_recipe_record_t *entry){

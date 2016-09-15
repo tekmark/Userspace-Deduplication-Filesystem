@@ -1,5 +1,10 @@
 #include"util.h"
 
+/*
+int calculate_blk_no(lfs_stat_t *stat, int cid, int blk_offset) {
+
+}
+*/
 void convert_SHA1_hex_str(uint8_t *, char *);
 
 /*

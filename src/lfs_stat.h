@@ -29,6 +29,8 @@ struct lfs_stat {
     int cur_cid;                          // container id to write. only modify by container_write().
 
     int ns_stat_offset;
+
+    int cur_ino;
     //TODO: *namespace
     // ns_stat_t *ns_stat;                   //
     ns_t *ns;

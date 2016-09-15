@@ -15,8 +15,6 @@
 
 void util_test();
 
-// extern lfs_stat_t;
-
 //helper functions for fingerprint.
 // fingerprint_t * fp_cpy(fingerprint_t *dest, fingerprint_t *src);
 // void fp_to_readable_hex(fp_t *fp, uint8_t *readable);
@@ -34,6 +32,7 @@ int32_t get_division_result (uint32_t dividend, uint32_t divisor);
 //convert string to uppercases.
 void string_toupper(char *str);
 
+// int calculate_blk_no(lfs_stat_t *stat, int cid, int blk_offset);
 //file size calculator
 //uint32_t calculate_lfs_file_size(int blk_size, int container_blk_num, int container_num);
 // void print_lfs_stat(lfs_stat_t *stat);

@@ -58,6 +58,7 @@ int lfs_stat_init(int fd, lfs_summary_t *summary) {
     } else {
         logger_debug("No entry in inode map. root direcotry is missing");
     }
+
         // //logger_debug("Skip. Namespace records is 0.");
         // //TODO: remove test cases.
         // //get a real fingerprint.

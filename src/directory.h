@@ -22,7 +22,7 @@
 #define DIR_RECORD_INO_OFFSET 256
 //#define NUM_OF_RECORD_PER_SEG 15
 
-#define DIR_ROOT_INO 0
+#define DIR_ROOT_INO 1
 
 extern const char *cur_dir_str;
 extern const char *parent_dir_str;
@@ -48,9 +48,11 @@ struct dir {
 };
 typedef struct dir dir_t;
 
-
 int dir_add_record(dir_t *dir, const char* filename, uint32_t inode_id);
 int dir_get_record_by_filename(dir_t *dir, const char * filename);
+
+int dir_get_record_by_pos(dir_t *dir, int pos, dir_record_t *r);
+int dir_get_all_records(dir_t *dir);
 
 int dir_find_record_by_filename(dir_t *dir, const char * filename);
 
@@ -68,7 +70,6 @@ dir_t * new_dir(int parent_ino, int cur_ino);
 
 dir_t * new_dir_by_buf(uint8_t *buf);
 int dir_read_from_buf(uint8_t *buffer, dir_t *dir);
-
 
 void dir_create_root();
 //

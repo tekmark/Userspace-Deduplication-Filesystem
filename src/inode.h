@@ -5,11 +5,14 @@
 #include<sys/types.h>
 #include<string.h>
 #include<fuse.h>
-#include"util.h"
+
+#include "util.h"
+#include "file_recipe.h"
 
 #define RECIPE_NUM 8
 #define MAX_INODE_NUM 2048
 #define DIRECT_BLK_NUM 12
+
 /*
 enum {
   REGULAR_FILE = 1,
@@ -50,20 +53,28 @@ typedef struct inode {
 struct inode {
     /*in use*/
     uint32_t st_ino;
-    uint32_t st_mode;           //rwx, file or directory
-    uint32_t st_size;           //file size in byte.
+    uint32_t st_mode;               //rwx, file or directory
+    uint32_t st_size;               //file size in byte.
+
+    uint32_t direct_blk_no;         //blk_no of direct block, file_recipe if file.
+    uint32_t indirect_blk_no;       //blk no of indirect block.
     /*TODO: to implement*/
     uint32_t st_nlink;
-    uint32_t owner;             //uid of owner
-    time_t st_ctm;            //inode change time
-    time_t st_mtm;            //file content last modification time
-    time_t st_atm;            //file content last access time
+    uint32_t owner;                 //uid of owner
+    time_t st_ctm;                  //inode change time
+    time_t st_mtm;                  //file content last modification time
+    time_t st_atm;                  //file content last access time
 
   // uint32_t direct_blk[DIRECT_BLK_NUM];
   // uint32_t file_recipe;      //position of file recipe
   // indirect_blk_t recipe_blk;
 };
 typedef struct inode inode_t;
+
+int inode_write_buf(char *buf, int off, inode_t *inode);
+int inode_read_buf(char *buf, int off, inode_t *inode);
+
+int inode_root(inode_t *inode);
 /*
 typedef struct {
   uint32_t seg_num;

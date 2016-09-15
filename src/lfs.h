@@ -23,6 +23,9 @@
 #include "lfs_operations.h"
 #include "container.h"
 
+
+//#define DIR_ROOT_INO FUSE_ROOT_ID
+
 //configure struct for lfs.
 typedef struct {
     uint32_t fd;

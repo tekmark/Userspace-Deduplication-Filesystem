@@ -46,6 +46,21 @@ int dir_find_record_by_filename(dir_t *dir, const char * filename) {
     return -1;
 }
 
+int dir_get_record_by_pos(dir_t *dir, int pos, dir_record_t *r) {
+    int size = *dir->size;
+    if (pos >= size || pos < 0) {
+        return -1;
+    }
+    int offset = pos * DIR_RECORD_LEN;
+    memcpy(r->filename, dir->records + offset, MAX_FILENAME_LEN + 1);
+    memcpy(&r->inode_id, dir->records + offset + DIR_RECORD_INO_OFFSET, sizeof(uint32_t));
+    return r->inode_id;
+}
+
+// int dir_get_all_records (dir_t *dir, ) {
+
+// }
+
 int dir_del_record_by_filename(dir_t *dir, const char* filename) {
     int size = *dir->size;
     int bytes = size * DIR_RECORD_LEN + sizeof(uint32_t);
@@ -82,8 +97,9 @@ void dir_print(dir_t *dir) {
     int i;
     for (i = 0; i < size; ++i) {
         dir_record_t dir_r;
-        int offset = i * DIR_RECORD_LEN;
-        dir_read_record_from_buf(dir->records, offset, &dir_r);
+        // int offset = i * DIR_RECORD_LEN;
+        // dir_read_record_from_buf(dir->records, offset, &dir_r);
+        dir_get_record_by_pos(dir, i, &dir_r);
         logger_debug("#%d - filename=>%s, inode=>%d", i, dir_r.filename,
             dir_r.inode_id);
     }
