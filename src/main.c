@@ -95,7 +95,7 @@ int main ( int  argc, char *argv[] ) {
             //get log level here.
             //printf ("option -L with value `%s'\n", optarg);
             string_toupper(optarg);
-            int ret = set_log_level_by_name(optarg);
+            int ret = logger_set_lvl_by_name(optarg);
             if (ret < 0) {
                 //printf("%s\n", "No such log level." );
                 logger_warn("No such log level");
@@ -137,7 +137,8 @@ int main ( int  argc, char *argv[] ) {
             printf("%s ", argv[optind++]);
         printf("\n");
     }
-
+    logger_set_log_file("helloworld");
+    logger_print_config();
     lfs_startup(lfs_filename);
 
     return lfs_test();

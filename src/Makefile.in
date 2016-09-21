@@ -98,13 +98,13 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_lfs_OBJECTS = lfs-main.$(OBJEXT) lfs-lfs_lowlevel_ops.$(OBJEXT) \
-	lfs-file_recipe.$(OBJEXT) lfs-lfs_operations.$(OBJEXT) \
-	lfs-inodemap.$(OBJEXT) lfs-segment.$(OBJEXT) \
-	lfs-fingerprint.$(OBJEXT) lfs-namespace.$(OBJEXT) \
-	lfs-lfs_reserved.$(OBJEXT) lfs-lfs_stat.$(OBJEXT) \
-	lfs-container_utility.$(OBJEXT) lfs-container_header.$(OBJEXT) \
-	lfs-constants.$(OBJEXT) lfs-logger.$(OBJEXT) \
+am_lfs_OBJECTS = lfs-main.$(OBJEXT) lfs-simpleclogger.$(OBJEXT) \
+	lfs-lfs_lowlevel_ops.$(OBJEXT) lfs-file_recipe.$(OBJEXT) \
+	lfs-lfs_operations.$(OBJEXT) lfs-inodemap.$(OBJEXT) \
+	lfs-segment.$(OBJEXT) lfs-fingerprint.$(OBJEXT) \
+	lfs-namespace.$(OBJEXT) lfs-lfs_reserved.$(OBJEXT) \
+	lfs-lfs_stat.$(OBJEXT) lfs-container_utility.$(OBJEXT) \
+	lfs-container_header.$(OBJEXT) lfs-constants.$(OBJEXT) \
 	lfs-container.$(OBJEXT) lfs-directory.$(OBJEXT) \
 	lfs-inode.$(OBJEXT) lfs-lfs.$(OBJEXT) lfs-util.$(OBJEXT)
 lfs_OBJECTS = $(am_lfs_OBJECTS)
@@ -265,7 +265,7 @@ AM_CFLAGS = -g -Wall
 lfs_CFLAGS = -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 #lfs_LDFLAGS=-lfuse -lssl -lcrypto
 lfs_LDADD = -lfuse -lcrypto
-lfs_SOURCES = main.c lfs_lowlevel_ops.h lfs_lowlevel_ops.c file_recipe.h file_recipe.c lfs_operations.h lfs_operations.c inodemap.h inodemap.c segment.h segment.c fingerprint.h fingerprint.c namespace.h namespace.c lfs_reserved.h lfs_reserved.c conatainer_types.h lfs_stat.h lfs_stat.c container_utility.h container_utility.c container_header.h container_header.c constants.h constants.c logger.h logger.c container.c directory.c global.h inode.h lfs.h uthash.h  util.h container.h directory.h inode.c lfs.c util.c
+lfs_SOURCES = main.c simpleclogger.h simpleclogger.c lfs_lowlevel_ops.h lfs_lowlevel_ops.c file_recipe.h file_recipe.c lfs_operations.h lfs_operations.c inodemap.h inodemap.c segment.h segment.c fingerprint.h fingerprint.c namespace.h namespace.c lfs_reserved.h lfs_reserved.c conatainer_types.h lfs_stat.h lfs_stat.c container_utility.h container_utility.c container_header.h container_header.c constants.h constants.c logger.h container.c directory.c global.h inode.h lfs.h uthash.h  util.h container.h directory.h inode.c lfs.c util.c
 all: all-am
 
 .SUFFIXES:
@@ -366,10 +366,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-lfs_operations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-lfs_reserved.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-lfs_stat.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-logger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-namespace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-segment.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-simpleclogger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lfs-util.Po@am__quote@
 
 .c.o:
@@ -399,6 +399,20 @@ lfs-main.obj: main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='main.c' object='lfs-main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
+
+lfs-simpleclogger.o: simpleclogger.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-simpleclogger.o -MD -MP -MF $(DEPDIR)/lfs-simpleclogger.Tpo -c -o lfs-simpleclogger.o `test -f 'simpleclogger.c' || echo '$(srcdir)/'`simpleclogger.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-simpleclogger.Tpo $(DEPDIR)/lfs-simpleclogger.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='simpleclogger.c' object='lfs-simpleclogger.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-simpleclogger.o `test -f 'simpleclogger.c' || echo '$(srcdir)/'`simpleclogger.c
+
+lfs-simpleclogger.obj: simpleclogger.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-simpleclogger.obj -MD -MP -MF $(DEPDIR)/lfs-simpleclogger.Tpo -c -o lfs-simpleclogger.obj `if test -f 'simpleclogger.c'; then $(CYGPATH_W) 'simpleclogger.c'; else $(CYGPATH_W) '$(srcdir)/simpleclogger.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-simpleclogger.Tpo $(DEPDIR)/lfs-simpleclogger.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='simpleclogger.c' object='lfs-simpleclogger.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-simpleclogger.obj `if test -f 'simpleclogger.c'; then $(CYGPATH_W) 'simpleclogger.c'; else $(CYGPATH_W) '$(srcdir)/simpleclogger.c'; fi`
 
 lfs-lfs_lowlevel_ops.o: lfs_lowlevel_ops.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-lfs_lowlevel_ops.o -MD -MP -MF $(DEPDIR)/lfs-lfs_lowlevel_ops.Tpo -c -o lfs-lfs_lowlevel_ops.o `test -f 'lfs_lowlevel_ops.c' || echo '$(srcdir)/'`lfs_lowlevel_ops.c
@@ -567,20 +581,6 @@ lfs-constants.obj: constants.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='constants.c' object='lfs-constants.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-constants.obj `if test -f 'constants.c'; then $(CYGPATH_W) 'constants.c'; else $(CYGPATH_W) '$(srcdir)/constants.c'; fi`
-
-lfs-logger.o: logger.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-logger.o -MD -MP -MF $(DEPDIR)/lfs-logger.Tpo -c -o lfs-logger.o `test -f 'logger.c' || echo '$(srcdir)/'`logger.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-logger.Tpo $(DEPDIR)/lfs-logger.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='logger.c' object='lfs-logger.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-logger.o `test -f 'logger.c' || echo '$(srcdir)/'`logger.c
-
-lfs-logger.obj: logger.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-logger.obj -MD -MP -MF $(DEPDIR)/lfs-logger.Tpo -c -o lfs-logger.obj `if test -f 'logger.c'; then $(CYGPATH_W) 'logger.c'; else $(CYGPATH_W) '$(srcdir)/logger.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lfs-logger.Tpo $(DEPDIR)/lfs-logger.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='logger.c' object='lfs-logger.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -c -o lfs-logger.obj `if test -f 'logger.c'; then $(CYGPATH_W) 'logger.c'; else $(CYGPATH_W) '$(srcdir)/logger.c'; fi`
 
 lfs-container.o: container.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lfs_CFLAGS) $(CFLAGS) -MT lfs-container.o -MD -MP -MF $(DEPDIR)/lfs-container.Tpo -c -o lfs-container.o `test -f 'container.c' || echo '$(srcdir)/'`container.c
