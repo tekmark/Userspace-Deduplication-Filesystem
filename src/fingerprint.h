@@ -12,7 +12,7 @@
 #define SHA1_LEN 20
 #define FINGERPRINT_LEN SHA1_LEN
 
-#define FINGERPRINT_READABLE_HEX_STR_LEN 2 * FINGERPRINT_LEN + 1
+#define FINGERPRINT_READABLE_HEX_STR_LEN (2 * FINGERPRINT_LEN + 1)
 
 extern const int c_sha1_len;
 extern const int c_fingerprint_len;

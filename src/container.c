@@ -1,56 +1,5 @@
 #include "container.h"
 
-void container_test() {
-    logger_debug("TESTING container operations ...");
-    container_t *container = container_alloc();
-
-    //init container, set to defaults.
-    *container->header->type = 98;
-    *container->header->data_blk_offset = 1;
-    *container->header->seg_tbl->offset = CONTAINER_HEADER_DEFAULT_SEG_TBL_OFFSET;
-
-    segment_t *s = seg_alloc(4096);
-    const char * text = "i am segment, hahaha";
-    memcpy(s->data, text, strlen(text));
-    // container_write_seg(container, s, 1);
-    container_add_seg(container, s);
-
-    container_print(container);
-    container_write(container);
-
-    fp_t fp0;
-    //fp_compute(text, strlen(text), fp0);
-    seg_compute_fingerprint(s, &fp0);
-    char fp_readable[FINGERPRINT_READABLE_HEX_STR_LEN];
-    fp_to_readable_hex(&fp0, fp_readable);
-    logger_debug("FP=>%s", fp_readable);
-    segment_t *seg = container_get_seg_by_fp(container, &fp0);
-    assert(seg);
-
-    // segment_t *s2 = container_get_seg(container, 0);
-
-    /*container_buf_print(container->buffer);
-    container_write(container);
-    container_buf_print(container->buffer);
-    // container_free(container);
-    //*/
-    container_t *c2 = container_alloc();
-    container_read(0, c2);
-    container_print(c2);
-    segment_t *seg2 = container_get_seg(c2, 0);
-    logger_debug("seg_size=>%d", seg2->size);
-    // int ret = container_read(1, c2);
-    //int cid = container_write(c2);
-    // container_buf_print(c2->buffer);
-    /*container_t *c3 = container_alloc();
-    container_read(0, c3);
-    // container_write(c2);
-    container_buf_print(c2->buffer);
-    segment_t *s2 = container_read_seg(c3, 4096, 4096);
-    logger_debug("Segment Data: %s", s2->data);*/
-    // container_free(c2);
-}
-
 //alloc memory for container. size is container_size in bytes
 //return pointer to container.
 container_t *container_alloc() {
@@ -218,6 +167,7 @@ int container_read_blk(container_t *container, int blk_num, uint8_t* blk) {
     assert(stat);
 
     int offset = blk_num * stat->blk_size;
+    assert(container->buffer);
     memcpy(blk, container->buffer + offset, stat->blk_size);
     return 0;
 }

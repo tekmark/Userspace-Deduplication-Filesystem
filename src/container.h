@@ -70,7 +70,7 @@ memory operations: (in container.c)
     2. memory free
  */
 
-void container_test();
+// void container_test();
 
 //memeory operations.
 //container_alloc() and container_free()
@@ -80,6 +80,8 @@ void container_free(container_t *);
 //container operations.
 int container_write (container_t *container);
 int container_read (uint32_t container_id, container_t *container);
+
+int container_update(uint32_t container_id, container_t *container);
 
 //uint32_t container_copy(container_t * dst_container, container_t * src_container);
 

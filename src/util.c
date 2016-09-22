@@ -1,5 +1,18 @@
 #include"util.h"
 
+
+void print_filerecipe(fr_t *filerecipe) {
+    int size = filerecipe->size;
+    logger_debug("---File Recipe (# of entries : %d)", size);
+    int i = 0;
+    for (; i < size; ++i) {
+        fp_readable_t fp_hex;
+        fp_to_readable_hex(&filerecipe->entries[i].seg_fp, fp_hex.hex);
+        logger_debug("#%d[%s]", i, fp_hex.hex);
+    }
+}
+
+
 /*
 int calculate_blk_no(lfs_stat_t *stat, int cid, int blk_offset) {
 
@@ -60,16 +73,16 @@ void fingerprint_print(fingerprint_t *fp ) {
 }
 
 //get the file name from the path
-const char* get_filename(const char *path) {
-        const char *p =  path;
-        while(*p != '\0') {
-                p++;
-        }
-        while(*p != '/')
-                p--;
-        p++;
-        return p;
-}
+// const char* get_filename(const char *path) {
+//         const char *p =  path;
+//         while(*p != '\0') {
+//                 p++;
+//         }
+//         while(*p != '/')
+//                 p--;
+//         p++;
+//         return p;
+// }
 
 
 int32_t get_division_result (uint32_t dividend, uint32_t divisor) {

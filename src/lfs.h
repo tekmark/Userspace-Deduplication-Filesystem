@@ -22,6 +22,8 @@
 #include "inodemap.h"
 #include "lfs_operations.h"
 #include "container.h"
+#include "lfs_ctx.h"
+#include "lfs_utils.h"
 
 
 //#define DIR_ROOT_INO FUSE_ROOT_ID

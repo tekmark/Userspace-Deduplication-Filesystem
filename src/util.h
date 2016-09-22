@@ -11,9 +11,11 @@
 // #include "lfs_stat.h"
 #include "container_types.h"
 #include "fingerprint.h"
+#include "file_recipe.h"
 #include "logger.h"
 
 void util_test();
+void print_filerecipe(fr_t *filerecipe);
 
 //helper functions for fingerprint.
 // fingerprint_t * fp_cpy(fingerprint_t *dest, fingerprint_t *src);
@@ -25,7 +27,7 @@ void util_test();
 //uint8_t* compute_fingerprint(uint8_t *buf, size_t bytes, fingerprint_t *fp);
 
 // void fingerprint_print(fingerprint_t *fp);
-const char * get_filename(const char*path);
+// const char * get_filename(const char*path);
 char* get_parentpath(const char *path);
 int32_t get_division_result (uint32_t dividend, uint32_t divisor);
 

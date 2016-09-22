@@ -17,6 +17,7 @@
 #include "container.h"
 #include "namespace.h"
 #include "fingerprint.h"
+#include "test.h"
 
 const char *c_default_lfs_filename = "./lfsfile";         //only used in main.c
 const char *c_default_lfs_mountpath = "/tmp/fuse";
@@ -139,6 +140,8 @@ int main ( int  argc, char *argv[] ) {
     }
 
     lfs_startup(lfs_filename);
+
+    test_file_recipe();
 
     return lfs_test();
     //
