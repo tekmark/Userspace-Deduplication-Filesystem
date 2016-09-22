@@ -138,13 +138,12 @@ int main ( int  argc, char *argv[] ) {
             printf("%s ", argv[optind++]);
         printf("\n");
     }
-    logger_set_log_file("helloworld");
+    // logger_set_log_file("helloworld");
     logger_print_config();
-    lfs_startup(lfs_filename);
-
+    //lfs_startup(lfs_filename);
     test_file_recipe();
-
-    return lfs_test();
+    return 0;
+    //return lfs_test();
     //
     // //Initialization.
     // logger_debug("Filename: %s, Mount location: %s", lfs_filename, mount_path);

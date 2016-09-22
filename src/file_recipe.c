@@ -1,12 +1,35 @@
 #include "file_recipe.h"
 
-int fr_add_ent(fr_t *filerecipe, fr_ent_t *entry) {
+int fr_add_ent(fr_t *filerecipe, fr_ent_t entry) {
     int size = filerecipe->size;
-    if (size >= FILE_RECIPE_ENTS_PER_BLK) {
+    if (size >= FILE_RECIPE_ENTS_PER_BLK && size < 0) {
         return -1;
     }
-    memcpy(&filerecipe->entries[size], entry, sizeof(fr_ent_t));
+    //memcpy(&filerecipe->entries[size], entry, sizeof(fr_ent_t));
+    filerecipe->entries[size] = entry;
     filerecipe->size += 1;
+    return filerecipe->size;
+}
+
+int fr_modify_ent(fr_t *filerecipe, fr_ent_t entry, int pos) {
+    if (pos > filerecipe->size && pos < 0) {
+        return -1;
+    }
+    //memcpy(&filerecipe->entries[ent_no], entry, sizeof(fr_ent_t));
+    filerecipe->entries[pos] = entry;
+    return pos;
+}
+int fr_remove_ent(fr_t *filerecipe, uint32_t pos){
+    if (pos > filerecipe->size && pos < 0) {
+        return -1;
+    }
+    int last_index = filerecipe->size - 1;
+    int i = pos;
+    while (i < last_index) {
+        filerecipe->entries[i] = filerecipe->entries[i + 1];
+        ++i;
+    }
+    filerecipe->size -= 1;
     return filerecipe->size;
 }
 

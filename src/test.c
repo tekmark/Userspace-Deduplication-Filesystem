@@ -5,19 +5,26 @@ void test_file_recipe() {
     logger_debug("ft_ent_t => size:%d", sizeof(fr_ent_t));
     //create a file recipe for testing.
     fr_t recipe;
-    recipe.size = 2;
+    //recipe.size = 2;
     //fr_ent_t
     //entry#0;
     char *text1 = "i am text file 1";
-    fp_compute(text1, strlen(text1), &recipe.entries[0].seg_fp);
+    fr_ent_t ent0;
+    fp_compute(text1, strlen(text1), &ent0.seg_fp);
+    fr_add_ent(&recipe, ent0);
     //entry#1
+    fr_ent_t ent1;
     char *text2 = "i am text file 2";
-    fp_compute(text2, strlen(text2), &recipe.entries[1].seg_fp);
+    fp_compute(text2, strlen(text2), &ent1.seg_fp);
+    fr_add_ent(&recipe, ent1);
 
     uint8_t * blk = (uint8_t*)malloc(4096);
     fr_write_buf(blk, 0, &recipe);
     // fr_t recipe;
     int size = fr_read_buf(blk, 0, &recipe);
+    print_filerecipe(&recipe);
+
+    fr_remove_ent(&recipe, 0);
     print_filerecipe(&recipe);
 }
 
