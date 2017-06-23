@@ -1,4 +1,5 @@
-#include "container_utility.h"
+#include "container_utils.h"
+#include "container.h"
 
 //calculate absolute bytes in file for a container id.
 uint32_t calculate_container_offset (uint32_t cid, lfs_stat_t *st) {
@@ -6,7 +7,7 @@ uint32_t calculate_container_offset (uint32_t cid, lfs_stat_t *st) {
     int offset = cid * st->container_size + st->blk_size * st->sys_reserved_blks;
     return offset;
 }
-
+/*
 //get container id from buffer
 int container_buf_get_id(char *buf) {
     //TODO: use header instead.
@@ -36,22 +37,37 @@ void container_buf_print(char *buf) {
     int type = container_buf_get_type(buf);
     logger_debug("id : %d | type: %d", id, type);
 }
+*/
 
-void container_header_print(container_header_t *header) {
-    logger_debug("Container#%d (type=>%d)", *header->id, *header->type);
-    logger_debug("data_blk_offset=>%d, seg_tbl_offset=>%d",
-                    *header->data_blk_offset, *header->seg_tbl->offset);
+void c_utils_print_container_header (c_header_t *header) {
+    const char * type;
+    if (*header->c_type == CONTAINER_TYPE_METADATA) {
+        type = "Metadata";
+    } else if (*header->c_type == CONTAINER_TYPE_DATA) {
+        type = "Data";
+    } else {
+        type = "Unknown";
+    }
+    printf("*****Container #%d(%s)*****\n", *header->c_id, type);
+    printf("data_blk_offset : %d\n", *header->data_blk_offset);
+    printf("seg_tbl_offset  : %d\n", *header->seg_tbl_offset);
 
     //get table size (# of entries).
-    int size = *header->seg_tbl->size;
-    logger_debug("-----Segment Table (size: %d)-----", size);
+    int size = *header->seg_tbl_size;
+    printf("-----Segment Table (size: %d)-----\n", size);
     int i;
     for (i = 0; i < size; ++i) {
-        seg_tbl_r_t r;
-        c_header_get_seg_info(header, i, &r);
+        seg_tbl_ent_t r;
+        c_header_get_seg_ent(header, i, &r);
         char fp_hex_str[FINGERPRINT_READABLE_HEX_STR_LEN];
-        fp_to_readable_hex(&r.fp, fp_hex_str);
-        logger_debug("Seg#%d:[fp=>%s, blk=>%d, size=>%d]", r.seg_no,
-                        fp_hex_str, r.blk_offset, r.seg_size);
+        fp_to_readable_hex(&r.seg_fp, fp_hex_str);
+        printf("#%02d:[fp=>%s, blk=>%d, size=>%d]\n", r.seg_no,
+                        fp_hex_str, r.seg_blk_off, r.seg_size);
     }
+}
+
+
+void c_utils_print_container(container_t *container) {
+    // logger_debug("Container:");
+    c_utils_print_container_header(container->header);
 }

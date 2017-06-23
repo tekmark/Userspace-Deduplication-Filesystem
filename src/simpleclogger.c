@@ -92,7 +92,10 @@ void logger_set_lvl_fatal() {
 int logger_set_log_file(const char * log_file) {
     logger_config->log_path = log_file;
     logger_config->log_fp = fopen(logger_config->log_path, "w+");
-    return 0;
+    if (logger_config->log_fp) {
+        return 0;
+    }
+    return -1;
 }
 
 void logger_real(int log_level, const char *fmt, va_list ap);
@@ -176,7 +179,11 @@ void logger_configure(logger_config_t *config) {
 }
 
 void logger_print_config () {
-    printf("Logfile path      : %s\n", logger_config->log_path);
+    if (logger_config->log_fp) {
+        printf("Logfile path      : %s\n", logger_config->log_path);
+    } else {
+        printf("stdout logging\n");
+    }
     printf("Runtime log level : %s\n",
                 logger_get_lvl_name(logger_config->log_lvl_runtime));
     printf("Build log level   : %s\n",
@@ -207,6 +214,8 @@ void logger_real(int log_level, const char *fmt, va_list ap) {
             vfprintf(stdout, log_buf, ap);
         } else {
             vfprintf(logger_config->log_fp, log_buf, ap);
+            fclose(logger_config->log_fp);
+            logger_config->log_fp = fopen(logger_config->log_path, "a");
         }
     }
 }

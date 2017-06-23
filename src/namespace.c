@@ -1,5 +1,8 @@
 #include "namespace.h"
 #include "lfs_stat.h"
+#include "uthash.h" //hash table
+#include "util.h"
+#include "logger.h"
 
 void namespace_test() {
 /*

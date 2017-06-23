@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #include "container_header.h"
-#include "container_utility.h"
+// #include "container_utils.h"
 // #include "global.h"
 #include "util.h"
 // #include "lfs.h"
@@ -30,6 +30,11 @@
 // extern const uint32_t c_container_size;
 // extern const uint32_t c_max_container_num;
 
+struct container_stat {
+    uint32_t blk_size;      //container blk size;
+    uint32_t blks;          //# of blks per container.
+    uint32_t flags;
+};
 /*
   buffer fomart:
   byte_0 (*buffer / *header)--> | container header ...
@@ -40,12 +45,15 @@
  data       : pointer to container data.
  */
 struct container {
+    //status
+    struct container_stat stat;
     //pointers.
     char *buffer;
-    container_header_t *header;
+    c_header_t *header;
     char *data;
     //size_t buf_size;
 };
+typedef struct container_stat container_stat_t;
 typedef struct container container_t;
 
 /*
@@ -87,13 +95,15 @@ int container_update(uint32_t container_id, container_t *container);
 
 void container_clean(uint32_t container_id, uint32_t *seg_ids, uint32_t size);
 
+uint32_t container_get_id(container_t *c);
+uint32_t container_get_type(container_t *c);
 
 int container_write_seg(container_t *container, segment_t *seg, int blk_offset);
 segment_t * container_read_seg(container_t *container, int blk_offset, int count);
 
 
 int container_add_seg(container_t *container, segment_t *seg);
-segment_t * container_get_seg(container_t *container, int seg_no);
+segment_t * container_get_seg(container_t *container, int pos);
 // uint32_t container_get_seg(container_t *container, uint32_t seg_offset,
                             // char *seg_buf);
 /*
@@ -104,7 +114,6 @@ void container_print_header(container_t * container);
 
 segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp);
 
-void container_print(container_t *container);
 
 int container_write_blk(container_t *container, uint8_t * blk, int blk_num);
 int container_read_blk(container_t *container, int blk_num, uint8_t* blk);

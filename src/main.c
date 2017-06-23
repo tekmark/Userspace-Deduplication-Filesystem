@@ -19,6 +19,8 @@
 #include "fingerprint.h"
 #include "test.h"
 
+#define USE_FUSE_VERSION 26
+
 const char *c_default_lfs_filename = "./lfsfile";         //only used in main.c
 const char *c_default_lfs_mountpath = "/tmp/fuse";
 
@@ -44,7 +46,9 @@ void print_version() {
 }
 
 void test() {
-    c_header_test();
+    test_container_header();
+    // test_container();
+    // test_file_recipe();
 }
 
 //declaration of helper functions.
@@ -138,12 +142,15 @@ int main ( int  argc, char *argv[] ) {
             printf("%s ", argv[optind++]);
         printf("\n");
     }
-    // logger_set_log_file("helloworld");
+    if (logger_set_log_file("/tmp/lfs") < 0) {
+        logger_error("Failed to set log file");
+    }
     logger_print_config();
-    //lfs_startup(lfs_filename);
-    test_file_recipe();
+    // lfs_startup(lfs_filename);
+    //test_file_recipe();
+    test_all();
     return 0;
-    //return lfs_test();
+    // return lfs_test();
     //
     // //Initialization.
     // logger_debug("Filename: %s, Mount location: %s", lfs_filename, mount_path);

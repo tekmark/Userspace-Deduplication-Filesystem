@@ -1,4 +1,14 @@
 #include "container.h"
+#include "container_utils.h"
+#include "container_header.h"
+
+uint32_t container_get_id(container_t *c) {
+    return *c->header->c_id;
+}
+uint32_t container_get_type(container_t *c) {
+    return *c->header->c_type;
+}
+
 
 //alloc memory for container. size is container_size in bytes
 //return pointer to container.
@@ -14,14 +24,19 @@ container_t *container_alloc() {
     container_t *container = (container_t*) malloc (sizeof(container_t));
     memset(container, 0, sizeof(container_t));
 
+    container->stat.blk_size = stat->blk_size;
+    container->stat.blks = stat->blks_per_container;
+
     int buffer_size = stat->container_size;
     //malloc a blank buffer for container.
     container->buffer = (uint8_t*) malloc (buffer_size);
     memset (container->buffer, 0, buffer_size);
+    container->header = (c_header_t*) malloc (sizeof(c_header_t));
+    c_header_init(container->buffer, container->header);
 
     //NOTE: value is not set here.
-    container->header = new_container_header (container->buffer);
-    assert(container->header->id);
+    // container->header = new_container_header (container->buffer);
+    // assert(container->header->id);
     //no data pointer assigned at this time. (set to NULL);
     container->data = NULL;
     return container;
@@ -42,10 +57,10 @@ int container_write (container_t *container) {
     int cid = stat->cur_cid;
 
     assert(container->header->data_blk_offset);
-    assert(container->header->id);
+    assert(container->header->c_id);
 
     // update container id in buffer.
-    *container->header->id = cid;
+    *container->header->c_id = cid;
 
     // calculate absolute offset.
     int offset = calculate_container_offset(cid, stat);
@@ -87,7 +102,7 @@ int container_read (uint32_t container_id, container_t *container) {
     }
 
     //NOTE: header has been filled when pread() above;
-    int cid = *container->header->id;
+    int cid = *container->header->c_id;
     if (cid != container_id) {
         logger_error("Container#%d. id in buffer is %d", container_id, cid);
         //TODO: error handling.
@@ -175,7 +190,7 @@ int container_read_blk(container_t *container, int blk_num, uint8_t* blk) {
 int container_write_blk(container_t *container, uint8_t * blk, int blk_num) {
     lfs_stat_t *stat = get_lfs_stat();
     assert(stat);
-    logger_debug("Writed Block#%d to Contaienr#%d", blk_num, *container->header->id);
+    logger_debug("Writed Block#%d to Contaienr#%d", blk_num, *container->header->c_id);
     int offset = blk_num * stat->blk_size;
     memcpy(container->buffer + offset, blk, stat->blk_size);
     return 0;
@@ -212,54 +227,41 @@ segment_t * container_read_seg(container_t *container, int blk_offset, int count
 
 //container operations.
 int container_add_seg(container_t *container, segment_t *seg) {
-    lfs_stat_t *stat = get_lfs_stat();
-    assert(stat);
 
-    int blks = seg->blks;
-    int size = seg->size;
-
-    seg_tbl_r_t seg_info;
+    seg_tbl_ent_t ent;
 
     //get fingerprint of segment.
-    seg_compute_fingerprint(seg, &seg_info.fp);
-    char fp_hex[FINGERPRINT_READABLE_HEX_STR_LEN];
-    fp_to_readable_hex(&seg_info.fp, fp_hex);
+    seg_compute_fingerprint(seg, &ent.seg_fp);
 
-    int blk_offset = *container->header->data_blk_offset;
-    seg_info.blk_offset = blk_offset;
-    seg_info.seg_size = size;
+    ent.seg_blk_off = *container->header->data_blk_offset;
+    ent.seg_size = seg->size;
 
-    int byte_offset = blk_offset * stat->blk_size;
+    int byte_offset = ent.seg_blk_off * container->stat.blk_size;
 
     memcpy(container->buffer + byte_offset, seg->data, seg->size);
-    assert(container->header->id);
+    // assert(container->header->c_id);
 
     //add metadata of seg to header.
-    c_header_add_seg_info(container->header, &seg_info);
+    c_header_add_seg_ent(container->header, &ent);
 
+    char fp_hex[FINGERPRINT_READABLE_HEX_STR_LEN];
+    fp_to_readable_hex(&ent.seg_fp, fp_hex);
     logger_debug("blk_offset->%d, byte_offset->%d, fp->%s",
-                    blk_offset, byte_offset, fp_hex);
-    assert(container->header->id);
+                    ent.seg_blk_off, byte_offset, fp_hex);
     return 0;
-
 }
 
-segment_t * container_get_seg(container_t *container, int seg_no) {
-    lfs_stat_t *stat = get_lfs_stat();
-    assert(stat);
-
+//return NULL if not found.
+segment_t * container_get_seg(container_t *container, int pos) {
     //get metadata of segment
-    seg_tbl_r_t r;
-    c_header_get_seg_info(container->header, seg_no, &r);
+    seg_tbl_ent_t ent;
+    c_header_get_seg_ent(container->header, pos, &ent);
     // r->blks;
-    uint32_t seg_size = r.seg_size;
+    uint32_t seg_size = ent.seg_size;
     // uint32_t blk_offset = r->blk_offset;
-    uint32_t byte_offset = r.blk_offset * stat->blk_size;
+    uint32_t byte_offset = ent.seg_blk_off * container->stat.blk_size;
 
-    segment_t *seg = (segment_t*)malloc(sizeof(segment_t));
-    //memory alloc
-    seg->data = (uint8_t*)malloc(seg_size * sizeof(uint8_t));
-    seg->size = seg_size;
+    segment_t *seg = seg_alloc(seg_size);
 
     memcpy(seg->data, container->buffer + byte_offset, seg_size);
 
@@ -267,29 +269,22 @@ segment_t * container_get_seg(container_t *container, int seg_no) {
 }
 
 segment_t * container_get_seg_by_fp(container_t *container, fp_t *fp) {
-    lfs_stat_t *stat = get_lfs_stat();
-    assert(stat);
 
-    uint8_t fp_readable[FINGERPRINT_READABLE_HEX_STR_LEN];
-    fp_to_readable_hex(fp, fp_readable);
-    seg_tbl_r_t r;
-    int ret = c_header_find_seg_by_fp(container->header, fp, &r);
+    seg_tbl_ent_t ent;
+    int ret = c_header_get_seg_ent_by_fp(container->header, fp, &ent);
     if (ret < 0) {
-        logger_debug("Failed to find fingerprint[%s] in header", fp_readable);
+        // uint8_t fp_readable[FINGERPRINT_READABLE_HEX_STR_LEN];
+        // fp_to_readable_hex(fp, fp_readable);
+        // logger_debug("Failed to find fingerprint[%s] in header", fp_readable);
         return NULL;
     }
-    int offset = r.blk_offset * stat->blk_size;
+    int offset = ent.seg_blk_off * container->stat.blk_size;
     // logger_debug("SEG SIZE: %d", r.seg_size);
-    segment_t * seg = seg_alloc(r.seg_size);
+    segment_t * seg = seg_alloc(ent.seg_size);
 
-    memcpy(seg->data, container->buffer + offset, r.seg_size);
+    memcpy(seg->data, container->buffer + offset, ent.seg_size);
 
     return seg;
-}
-
-void container_print(container_t *container) {
-    // logger_debug("Container:");
-    container_header_print(container->header);
 }
 
 int container_read_dir(container_t *container, int blk_offset, dir_t *dir) {

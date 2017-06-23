@@ -12,6 +12,15 @@ void print_filerecipe(fr_t *filerecipe) {
     }
 }
 
+int calculate_blk_no(lfs_stat_t *stat, int cid, int blk_offset) {
+    int blk_no = stat->sys_reserved_blks;
+    blk_no += cid * stat->blks_per_container + blk_offset;
+    return blk_no;
+}
+
+int calculate_container_id(lfs_stat_t *stat, int abs_blk_no);
+int calculate_blk_offset(lfs_stat_t *stat, int abs_blk_no);
+
 
 /*
 int calculate_blk_no(lfs_stat_t *stat, int cid, int blk_offset) {

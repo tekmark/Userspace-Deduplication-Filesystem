@@ -49,7 +49,7 @@ struct dir {
 typedef struct dir dir_t;
 
 int dir_add_record(dir_t *dir, const char* filename, uint32_t inode_id);
-int dir_get_record_by_filename(dir_t *dir, const char * filename);
+int dir_get_record_by_name(dir_t *dir, const char * filename, dir_record_t *r);
 
 int dir_get_record_by_pos(dir_t *dir, int pos, dir_record_t *r);
 int dir_get_all_records(dir_t *dir);

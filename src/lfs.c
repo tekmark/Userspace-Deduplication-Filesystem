@@ -3,12 +3,6 @@
 
 void lfs_build_root_dir();
 
-int calculate_blk_no(lfs_stat_t *stat, int cid, int blk_offset) {
-    int blk_no = stat->sys_reserved_blks;
-    blk_no += cid * stat->blks_per_container + blk_offset;
-    return blk_no;
-}
-
 //set defaults
 int lfs_file_create(const char *filename) {
     logger_info("Create a new filesystem, Initializing...");
@@ -90,25 +84,36 @@ int lfs_startup(const char *filename) {
     logger_debug("debug");
     lfs_build_root_dir();
     logger_debug("lfs started");
-    lfs_ctx_init();
+    // lfs_ctx_init();
     return 0;
 }
 
+/* add root directory.
+ * 1. add to inode map.
+ * |--------------------container#0(8 blocks)----------------------|
+ * | blk#0 | blk#1 | blk#2 | blk#3 | blk#4 | blk#5 | blk#6 | blk#7 |
+ * |---------------------------------------------------------------|
+ * | header| root  | direct|
+ * |       | inode | block |
+ */
 void lfs_build_root_dir() {
     lfs_stat_t *stat = get_lfs_stat();
     assert(stat);
-    stat->cur_ino = DIR_ROOT_INO;
-
     logger_debug("Building Root Directory ...");
+
+    //construct a root inode
+    inode_t root;
+    inode_root(&root);
+    root.direct_blk_no  = calculate_blk_no(stat, 0, 2);
+    logger_debug("direct_blk_no＝>%d", root.direct_blk_no);
+
+    stat->cur_ino = DIR_ROOT_INO;
     container_t *c = container_alloc();
     assert(c);
-    //build root inode.
-    inode_t root_inode;
-    inode_root(&root_inode);
     int blk_offset = 1;
-    root_inode.direct_blk_no  = calculate_blk_no(stat, 0, 2);
-    logger_debug("direct_blk_no＝>%d", root_inode.direct_blk_no);
-    container_write_blk(c, (void*)&root_inode, blk_offset);
+    container_write_blk(c, (void*)&root, blk_offset);
+    //get current context
+    //lfs_ctx_t *ctx = get_lfs_ctx();
 
     inode_t inode;
     memset(&inode, 0, sizeof(inode_t));
@@ -117,7 +122,7 @@ void lfs_build_root_dir() {
     inode_read_buf(blk_buf, 0, &inode);
     logger_debug("inode[ino=>%d, size=>%d]", inode.st_ino, inode.st_size);
 
-    //
+    //construct a directory.
     dir_t *root_dir = new_dir(DIR_ROOT_INO, DIR_ROOT_INO);
     assert(root_dir);
     //TODO: a method to add dir to contaienr.
@@ -130,7 +135,11 @@ void lfs_build_root_dir() {
     inodemap_add_record(&r);
 
     container_write(c);
-    container_free(c);
+    lfs_ctx_t *ctx = get_lfs_ctx();
+    assert(ctx);
+    //contaienr swap;
+    container_free(ctx->cur_meta_container);
+    ctx->cur_meta_container = c;
     logger_debug("root inode added");
 }
 /**
@@ -204,46 +213,75 @@ static int lfs_access (const char *path, int mask) {
 static int lfs_getattr(const char *path, struct stat *stbuf){
     logger_debug ("!!Enter: lfs_getattr(), path=>%s", path);
     int res = 0;
+    //reset return struct.
     memset(stbuf, 0, sizeof(struct stat));
-    //if path is root
+    //if path is root, root is special because it has no filename.
     if (strcmp(path, root_path) == 0) {
+        //NOTE: hardcoded, stat should be got from inode instead.
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_size = 4096;
         stbuf->st_nlink = 2;
-    } else {
+    } else {        //if non-root.
         const char *filename = get_filename(path);
         lfs_ctx_t *ctx = get_lfs_ctx();
         assert(ctx);
 
-        int cur_cid = *ctx->cur_meta_container->header->id;
+        int cur_cid = *ctx->cur_meta_container->header->c_id;
         logger_debug("filename=>%s, cur_cid=>%d", filename, cur_cid);
-        //hardcoded, cur_dir is root.
+        //NOTE: hardcoded, cur_dir is root.
         int cur_ino = 1;
-        int cid = 0;
-        int blk_offset = 1;
-        if (cid == cur_cid) {
-            logger_debug("cur_cid");
-            inode_t inode;
-            uint8_t *buf = (uint8_t*)malloc(4096);
-            container_read_blk(ctx->cur_meta_container, 1, buf);
-            inode_read_buf(buf, 0, &inode);
-            logger_debug("inode[%d, %d, blk_no=>%d]", inode.st_ino,
-                            inode.st_size, inode.direct_blk_no);
-            container_read_blk(ctx->cur_meta_container, 2, buf);
-            dir_t *dir = new_dir_by_buf(buf);
-            dir_print(dir);
-            int ret = dir_find_record_by_filename(dir, filename);
-            if (ret < 0) {
-                res = -ENOENT;
-            } else {
-                //find inode from inodemap, get stat of file/dir.
-                stbuf->st_ino = 198;
-                stbuf->st_mode = S_IFDIR | 0755;
-                stbuf->st_size = 4096;
-                stbuf->st_nlink = 2;
-                return 0;
-                //res = -EEXIST;
-            }
+        //get cid and block offset from inode map.
+        int cid;
+        int blk_offset;
+        if (cur_ino == DIR_ROOT_INO) {      //if root.
+            int cid = 0;
+            int blk_offset = 1;
+        } else {                            //if non-root.
+            //TODO: lookup in inodemap.
+            logger_error("Not implemented, assert()!");
+            assert(NULL);
+        }
+
+        if (cid != cur_cid) {
+            //load cur meta container here.
+            container_read(cid, ctx->cur_meta_container);
+            cur_cid = cid;
+        }
+
+        //read block (inode) from contaienr.
+        uint8_t *buf = (uint8_t*)malloc(4096);
+        container_read_blk(ctx->cur_meta_container, blk_offset, buf);
+        //read inode from block.
+        inode_t inode;
+        inode_read_buf(buf, 0, &inode);
+        logger_debug("inode[%d, %d, blk_no=>%d]", inode.st_ino, inode.st_size,
+                        inode.direct_blk_no);
+        //NOTE: hardcoded. direct_blk_no => [cid, blk_off]
+        cid = 0;
+        blk_offset = 2;
+        if (cid != cur_cid) {
+            //load cur meta container here.
+            container_read(cid, ctx->cur_meta_container);
+            cur_cid = cid;
+        }
+        memset(buf, 0, 4096);
+        container_read_blk(ctx->cur_meta_container, blk_offset, buf);
+
+        dir_t *dir = new_dir_by_buf(buf);
+        dir_print(dir);
+        dir_record_t r;
+        int ret = dir_get_record_by_name(dir, filename, &r);
+        if (ret < 0) {      //entry is not found.
+            return -ENOENT;
+        } else {
+            logger_debug("name->%s, inode_id=>%d", r.filename, r.inode_id);
+            //TODO: find inode from inodemap, get stat of file/dir.
+            stbuf->st_ino = 198;
+            stbuf->st_mode = S_IFREG | 0755;
+            stbuf->st_size = 0;
+            stbuf->st_nlink = 2;
+            return 0;
+            //res = -EEXIST;
         }
         // if (strcmp(filename, "aaa") == 0) {
             // stbuf->st_ino = 1999;
@@ -305,11 +343,61 @@ static int lfs_getattr(const char *path, struct stat *stbuf){
 }
 
 /*
-Create and open a file
-If the file does not exist, first create it with the specified mode, and then open it.
-*/
+ * Create and open a file
+ * If the file does not exist, first create it with the specified mode,
+ * and then open it.
+ * NOTE: assign file handle?
+ */
 static int lfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     logger_debug("lfs_create(), path=>%s", path);
+
+    container_t *c = get_lfs_ctx()->cur_meta_container;
+    assert(c);
+    //NOTE: hardcoded,
+    int cid = 0;
+
+    if (cid != *c->header->c_id) {
+        //load cur metadata container
+        container_read(cid, c);
+    }
+    // container_print(c);
+
+    //read blk(inode) from container.
+    uint8_t *blk = (uint8_t*)malloc(4096);
+    memset(blk, 0, 4096);
+    container_read_blk(c, 1, blk);
+    //fill inode fields
+    inode_t inode;
+    //inode_read_buf(blk, 0, &inode);
+    inode_read_buf(blk, 0, &inode);
+    logger_debug("inode [ino=>%d, size=>%d, direct_blk_no=>%d]",
+                    inode.st_ino, inode.st_size, inode.direct_blk_no);
+
+
+    //construct dir from blk.
+    if (cid == *c->header->c_id) {
+        logger_debug("direct blk container has been read.");
+        //read direct blk of directory.
+        memset(blk, 0, 4096);
+        container_read_blk(c, 2, blk);
+
+        dir_t *dir = new_dir_by_buf(blk);
+        const char *name = get_filename(path);
+        int test_ino = 199;
+        dir_add_record(dir, name, test_ino);
+        dir_print(dir);
+        container_write_blk(c, blk, 2);
+        inode_t new_inode;
+        new_inode.st_ino = 0;
+        new_inode.st_size = 4096;
+        memset(blk, 0, 4096);
+        inode_write_buf(blk, 0, &new_inode);
+        container_write_blk(c, blk, 3);
+
+    } else {
+        logger_debug("read other container");
+    }
+
     return 0;
 }
 //   printf("Entry: lfs_create()\n");
@@ -391,23 +479,33 @@ static int lfs_mkdir(const char *path, mode_t mode){
     //read container(metadata) from disk.
     container_t *c = get_lfs_ctx()->cur_meta_container;
     assert(c);
-    container_read(0, c);
-    container_print(c);
+    if (*c->header->c_id != cid) {
+        logger_debug("Require metadata container#%d, but current is %d",
+                            cid, *c->header->c_id);
+        //load cur_meta_container;
+        container_read(cid, c);
+    }
+    // container_print(c);
+
     //read blk(inode) from container.
     uint8_t *blk = (uint8_t*)malloc(4096);
-    container_read_blk(c, 1, blk);
+    memset(blk, 0, 4096);
+    container_read_blk(c, blk_off, blk);
     //fill inode fields
     inode_t inode;
     //inode_read_buf(blk, 0, &inode);
     inode_read_buf(blk, 0, &inode);
     logger_debug("inode [ino=>%d, size=>%d, direct_blk_no=>%d]",
                     inode.st_ino, inode.st_size, inode.direct_blk_no);
+    //NOTE: hardcoded.
     //get cid & blk_offset from blk_no.
     cid = 0;
     int blk_offset = 2;
+
     //construct dir from blk.
-    if (cid == *c->header->id) {
+    if (cid == *c->header->c_id) {
         logger_debug("direct blk container has been read.");
+        //read direct blk of directory.
         memset(blk, 0, 4096);
         container_read_blk(c, 2, blk);
 
@@ -432,6 +530,7 @@ static int lfs_mkdir(const char *path, mode_t mode){
     free(blk);
     return 0;
 }
+
 /** Open directory
   * Unless the 'default_permissions' mount option is given, this method should
   * check if opendir is permitted for this directory. Optionally opendir may
@@ -457,7 +556,7 @@ static int lfs_opendir(const char *path, struct fuse_file_info *fi) {
 static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi){
 
-    logger_debug("lfs_readdir(): enter path: %s, buffer size=>%d", path, sizeof(buf));
+    logger_debug("lfs_readdir(): enter path: %s", path);
     inode_t i;
     i.st_ino = 0;
 
@@ -468,7 +567,7 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     //container_t *c = container_alloc();
     container_t *c = get_lfs_ctx()->cur_meta_container;
     //container_read(cid, c);
-    container_print(c);
+    // container_print(c);
     uint8_t *blk = (uint8_t*)malloc(4096);
     container_read_blk(c, 2, blk);
 
@@ -482,7 +581,7 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         dir_get_record_by_pos(dir, ii, &r);
         logger_debug("i=>%d, filename=>%s", ii, r.filename);
         if (filler(buf, r.filename, NULL,0)) {
-            logger_debug (">0 ii=>%d", ii);
+            //logger_debug (">0 ii=>%d", ii);
         } else {
             logger_debug ("ii=>%d", ii);
         }
@@ -512,16 +611,40 @@ static int lfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 //   printf ("!! Exit: lfs_readdir with exit code 0 \n");
 }
 
-static int lfs_open(const char *path, struct fuse_file_info *fi){
-  printf("lfs_open: enter\n");
 
-  return 0;
+/* File open operation
+ * No creation (O_CREAT, O_EXCL) and by default also no truncation (O_TRUNC)
+ * flags will be passed to open(). If an application specifies O_TRUNC, fuse
+ * first calls truncate() and then open(). Only if 'atomic_o_trunc' has been
+ * specified and kernel version is 2.6.24 or later, O_TRUNC is passed on to open.
+ * Unless the 'default_permissions' mount option is given, open should check if
+ * the operation is permitted for the given flags. Optionally open may also
+ * return an arbitrary filehandle in the fuse_file_info structure, which will be
+ * passed to all file operations.
+ * NOTE: assign file handle here.
+ */
+static int lfs_open(const char *path, struct fuse_file_info *fi){
+    logger_debug("lfs_open()");
+    return 0;
 }
 
+/*
+ * Read data from an open file
+ * Read should return exactly the number of bytes requested except on EOF or
+ * error, otherwise the rest of the data will be substituted with zeroes. An
+ * exception to this is when the 'direct_io' mount option is specified, in which
+ * case the return value of the read system call will reflect the return value
+ * of this operation.
+ * NOTE: normally, size is 4096.
+ */
 
 static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
                     struct fuse_file_info *fi){
-  printf("lfs_read: enter, input para: size = %u, offset=%u\n", (uint32_t)size, (uint32_t)offset);
+    logger_debug("lfs_read(). input para: size = %u, offset=%u\n",
+                    (uint32_t)size, (uint32_t)offset);
+    const char * text = "i am text for test^v^";
+    memcpy(buf, text, strlen(text) + 1);
+    return size;
 //   uint32_t ret = 0;
 //   inode_t inode;
 //   ret = dir_get_inode(path, &inode);
@@ -596,6 +719,251 @@ static int lfs_read(const char *path, char *buf, size_t size, off_t offset,
 //   return strlen(buf);
 }
 
+/* Write data to an open file
+ * Write should return exactly the number of bytes requested except on error. An
+ * exception to this is when the 'direct_io' mount option is specified (see read
+ * operation).
+ *
+ */
+static int lfs_write(const char *path, const char *buf, size_t size,
+                     off_t offset, struct fuse_file_info *fi){
+    logger_debug("lfs_write(), default para: size=%u, offset=%u",
+                            (uint32_t)size, (uint32_t)offset);
+    logger_debug("lfs_write: buffer data to write %s, size: %u", buf, (uint32_t)size);
+    logger_debug("lfs_write: path to write %s", path);
+
+    //TODO: check size. first. compare with blk or seg_size;
+    lfs_ctx_t *ctx = get_lfs_ctx();
+    assert(ctx);
+
+    lfs_stat_t *stat = get_lfs_stat();
+
+    //hardcoded. inode blk is (0, 3) filerecipe blk is (0, 4);
+    //TODO: get inode via path, and get filerecipe blk from inode.
+    segment_t seg;
+    seg.size = size;
+    seg.data = (uint8_t*)buf;
+    fp_t fp;
+    //calculate file recipe.
+    seg_compute_fingerprint(&seg, &fp);
+
+    /*
+    //two structs are required.
+    seg_tbl__t hdr_seg_tbl_ent;
+    fp_cpy(&hdr_seg_tbl_ent.fp, &fp);
+    hdr_seg_tbl_ent.seg_size = size;
+    hdr_seg_tbl_ent.blk_offset = 1;
+
+    fr_ent_t fr_ent;
+    fp_cpy(&fr_ent.seg_fp, &fp);
+    fr_ent.seg_size = size;
+    int blk_no = calculate_blk_no(stat, 0, 1);
+    fr_ent.blk_no = blk_no;
+
+    container_t *c = get_lfs_ctx()->cur_data_container;
+    //add seg_tbl entry
+    c_header_add_seg_info(c->header, &hdr_seg_tbl_ent);
+    container_print(c);
+
+    //add file recipe entry
+    */
+
+
+
+    return 0;
+}
+
+/* Write contents of buffer to an open file
+ * Similar to the write() method, but data is supplied in a generic buffer. Use
+ * fuse_buf_copy() to transfer data to the destination.
+ */
+
+static int lfs_write_buf(const char *path, struct fuse_bufvec *buf, off_t off,
+                                struct fuse_file_info *fi) {
+
+    logger_debug("lfs_write_buf(), path=>%s, offset=>%d", path, off);
+    return 0;
+}
+
+
+//not implemented.
+static int lfs_read_buf(const char *path, struct fuse_bufvec **bufp, size_t size,
+                            off_t off, struct fuse_file_info *fi) {
+    logger_debug("lfs_read_buf(), path=>%s, size=>%d, off=>%d", path, size, off);
+    return 0;
+}
+//
+//   int ret = 0;
+//   inode_t inode;
+//
+//   //get inode of that inode
+//   ret = dir_get_inode(path, &inode);
+//   if (ret != 0 ){
+//     printf("lfs_write: cannot get inode by using dir_get_inode()\n");
+//     return -ENOENT;
+//   }
+//   printf("lfs_write: find target inode, inode_id = %u, file_recipe addr= %x\n",
+//            inode.inode_id, inode.file_recipe);
+//
+//   file_recipe_t *recipe = NULL;
+//   if( inode.file_recipe == 0 ){                          //if the file has no file recipe
+//      //allocate mem for file recipe
+//      recipe = (file_recipe_t*)malloc(c_seg_size );
+//      memset( recipe, 0 , c_seg_size);
+//      //container_add_seg (lfs_info->buf_container, (void*)file_recipe);
+//   } else {                                              //if file has file recipe
+//     //calculate file recipe cid and offset
+//     uint32_t recipe_cid = (inode.file_recipe - c_blk_size)/c_container_size;
+//     uint32_t recipe_offset = (inode.file_recipe - c_blk_size)%c_container_size/c_blk_size;
+//
+//     //find target file recipe
+//     if( lfs_info->buf_container->header->container_id == recipe_cid ) {
+//       printf("lfs_write: file recipe is in buf container\n");
+//       recipe = (file_recipe_t*)( lfs_info->buf_container->buf + recipe_offset * c_seg_size);
+//     } else if( lfs_info->cur_container->header->container_id == recipe_cid ) {
+//       recipe = (file_recipe_t*)( lfs_info->cur_container->buf + recipe_offset * c_seg_size);
+//     } else {
+//       container_read( lfs_info->cur_container, recipe_cid );
+//       recipe = (file_recipe_t*)( lfs_info->cur_container->buf + recipe_offset * c_seg_size);
+//     }
+//   }
+//
+//
+//   //inode modification time
+//   time(&inode.mtime);
+//   //allocate memory for file recipe entry;
+//   file_recipe_record_t *recipe_entry = malloc( sizeof(file_recipe_record_t) );
+//   //file recipe
+//   fingerprint_seg_record_t *header_record = malloc( sizeof( fingerprint_seg_record_t));
+//   //name space entry
+//   namespace_record_t *item = (namespace_record_t*)malloc(sizeof(namespace_record_t));
+//   uint32_t i = 0;
+//   uint32_t seg_cnt = 1 ; //size/c_seg_size;
+//   while( seg_cnt != 0) {
+//     //compute fingerprint of $4KB
+//     compute_fingerprint(&recipe_entry->fingerprint, (uint8_t*)(buf + i*c_seg_size),
+//                         c_seg_size);
+//     recipe_entry->seg_num = offset/c_blk_size;
+//     //add entry to file recipe
+//     filerecipe_add_entry( recipe, recipe_entry);
+//
+//     //add fingerprint to container header
+//     //container_header_add_fingerprint(lfs_info->buf_container, header_record);
+//
+//     fingerprint_print(&recipe_entry->fingerprint);
+//
+//     namespace_record_t *result;
+//     HASH_FIND(hh, lfs_info->lfs_namespace, &recipe_entry->fingerprint,sizeof(fingerprint_t), result);
+//     if( result == NULL ) {
+//       printf("lfs_write: no duplicated seg\n");
+//       //header fingerprint entry;
+//       memset(header_record, 0, sizeof(fingerprint_seg_record_t) );
+//       memcpy(header_record->fp.fingerprint, recipe_entry->fingerprint.fingerprint, FINGERPRINT_SIZE);
+//       header_record->seg = lfs_info->buf_container->seg_offset;
+//       printf("lfs_write: fingerprint header seg_offset %u\n", header_record->seg);
+//       //add fingerprint to container header
+//       container_header_add_fingerprint(lfs_info->buf_container, header_record);
+//
+//       //fingerprint_print(&recipe_entry->fingerprint);
+//       //add fingerprint to namespace;
+//       memset( item, 0, sizeof(namespace_record_t) );
+//       memcpy( item->fp.fingerprint, recipe_entry->fingerprint.fingerprint, sizeof(fingerprint_t) );
+//       item->container_id = lfs_info->buf_container->header->container_id;
+//       HASH_ADD(hh, lfs_info->lfs_namespace, fp, sizeof(fingerprint_t), item);
+//       //add data to the block
+//       container_add_seg(lfs_info->buf_container, (char*)buf + i*c_seg_size);
+//     } else {
+//       printf("lfs_write: find seg in disk\n");
+//     }
+//
+//     seg_cnt--;
+//     i++;
+//
+//   }
+//
+//   print_filerecipe(recipe);
+//   printf(" lfs_write: file recipe entry cnt: %u\n", HASH_CNT(hh, lfs_info->lfs_namespace));
+//
+//   //add file recipe to mem
+//   inode.file_recipe = lfs_info->buf_container->header->container_id * c_container_size
+//                     + lfs_info->buf_container->seg_offset * c_blk_size + c_blk_size;
+//   printf("lfs_write: new file recipe is added to mem addr %x\n", inode.file_recipe);
+//   container_add_seg(lfs_info->buf_container, (char*)recipe);
+//
+//   //update inode map
+//   for (i = 0; i < MAX_INODE_NUM; i++) {
+//     if (lfs_info->imap->records[i].inode_id == inode.inode_id) {
+//       lfs_info->imap->records[i].inode_addr =
+//           lfs_info->buf_container->header->container_id * c_container_size
+//           + lfs_info->buf_container->seg_offset * c_seg_size + c_blk_size;
+//       printf("lfs_write: inode new addr is %x\n",
+//         lfs_info->imap->records[i].inode_addr);
+//           break;
+//     }
+//   }
+//   inode.file_size = size;
+//   container_add_seg(lfs_info->buf_container, (char*)&inode);
+//   print_inodemap(lfs_info->imap);
+//   free(recipe_entry);
+//   free(header_record);
+//   return size;
+// }
+
+/* Get attributes from an open file
+ * This method is called instead of the getattr() method if the file information
+ * is available. Currently this is only called after the create() method if that
+ * is implemented (see above). Later it may be called for invocations of fstat()
+ * too.
+ * NOTE: access check .swp file when using vim, called when use touch
+ */
+static int lfs_fgetattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
+    logger_debug("lfs_fgetattr(), path=>%s", path);
+    memset(stbuf, 0, sizeof(struct stat));
+    lfs_ctx_t *ctx = get_lfs_ctx();
+    assert(ctx);
+    container_t *c = ctx->cur_meta_container;
+
+    const char *filename = get_filename(path);
+    //NOTE: hardcoded. current dir is root. root inode location is (0, 1);
+    int cur_ino = DIR_ROOT_INO;
+    int cid = 0;
+    int blk_off = 1;
+    //direct_blk of root inode (0, 2);
+
+    if (cid != *c->header->c_id) {
+        //TODO: implement.
+        assert(0);
+    }
+
+    //look for path entry in direct block of directory.
+    uint8_t blk[4096];
+    //read direct block.
+    container_read_blk(c, 2, blk);
+    dir_t *d = new_dir_by_buf(blk);
+    dir_print(d);
+    dir_record_t r;
+    int ret = dir_get_record_by_name(d, filename, &r);
+    if (ret < 0) {
+        return -EEXIST;
+    } else {
+        logger_debug("name->%s, inode_id=>%d", r.filename, r.inode_id);
+        //TODO: find inode from inodemap, get stat of file/dir.
+        //NOTE: hardcoded.
+        stbuf->st_ino = 198;
+        stbuf->st_mode = S_IFREG | 0755;
+        stbuf->st_size = 0;
+        stbuf->st_nlink = 2;
+        return 0;
+    }
+}
+/* Change the access and modification times of a file with nanosecond resolution
+ * This supersedes the old utime() interface. New applications should use this.
+ * See the utimensat(2) man page for details.
+ */
+static int lfs_utimens(const char *path, const struct timespec tv[2]) {
+    logger_debug("lfs_utimens(), path=>%s", path);
+    return 0;
+}
 //fuse operations interface mapping
 struct fuse_operations lfs_oper = {
     .getattr    = lfs_getattr,
@@ -604,9 +972,13 @@ struct fuse_operations lfs_oper = {
     .readdir    = lfs_readdir,
     .open       = lfs_open,
     .read       = lfs_read,
-    // .write      = lfs_write,
+    // .read_buf   = lfs_read_buf,
+    .write      = lfs_write,
+    // .write_buf  = lfs_write_buf,
     .create     = lfs_create,
     .access     = lfs_access,
+    .fgetattr   = lfs_fgetattr,
+    .utimens    = lfs_utimens,
     // .unlink     = lfs_unlink,
     // .rmdir      = lfs_rmdir,
     // .rename     = lfs_rename
@@ -615,7 +987,7 @@ struct fuse_operations lfs_oper = {
 int lfs_test() {
     container_t *c = container_alloc();
     container_read(0, c);
-    container_print(c);
+    // container_print(c);
     uint8_t *blk = (uint8_t*)malloc(4096);
     container_read_blk(c, 2, blk);
 
@@ -806,129 +1178,7 @@ int lfs_test() {
 // }
 //
 //
-// static int lfs_write(const char *path, const char *buf, size_t size,
-//                      off_t offset, struct fuse_file_info *fi){
-//
-//   printf("lfs_write: enter, default para: size=%u, offset=%u\n",
-//                             (uint32_t)size, (uint32_t)offset);
-//   printf("lfs_write: buffer data to write %s, size: %u\n", buf, (uint32_t)size);
-//   printf("lfs_write: path to write %s\n", path);
-//
-//   int ret = 0;
-//   inode_t inode;
-//
-//   //get inode of that inode
-//   ret = dir_get_inode(path, &inode);
-//   if (ret != 0 ){
-//     printf("lfs_write: cannot get inode by using dir_get_inode()\n");
-//     return -ENOENT;
-//   }
-//   printf("lfs_write: find target inode, inode_id = %u, file_recipe addr= %x\n",
-//            inode.inode_id, inode.file_recipe);
-//
-//   file_recipe_t *recipe = NULL;
-//   if( inode.file_recipe == 0 ){                          //if the file has no file recipe
-//      //allocate mem for file recipe
-//      recipe = (file_recipe_t*)malloc(c_seg_size );
-//      memset( recipe, 0 , c_seg_size);
-//      //container_add_seg (lfs_info->buf_container, (void*)file_recipe);
-//   } else {                                              //if file has file recipe
-//     //calculate file recipe cid and offset
-//     uint32_t recipe_cid = (inode.file_recipe - c_blk_size)/c_container_size;
-//     uint32_t recipe_offset = (inode.file_recipe - c_blk_size)%c_container_size/c_blk_size;
-//
-//     //find target file recipe
-//     if( lfs_info->buf_container->header->container_id == recipe_cid ) {
-//       printf("lfs_write: file recipe is in buf container\n");
-//       recipe = (file_recipe_t*)( lfs_info->buf_container->buf + recipe_offset * c_seg_size);
-//     } else if( lfs_info->cur_container->header->container_id == recipe_cid ) {
-//       recipe = (file_recipe_t*)( lfs_info->cur_container->buf + recipe_offset * c_seg_size);
-//     } else {
-//       container_read( lfs_info->cur_container, recipe_cid );
-//       recipe = (file_recipe_t*)( lfs_info->cur_container->buf + recipe_offset * c_seg_size);
-//     }
-//   }
-//
-//
-//   //inode modification time
-//   time(&inode.mtime);
-//   //allocate memory for file recipe entry;
-//   file_recipe_record_t *recipe_entry = malloc( sizeof(file_recipe_record_t) );
-//   //file recipe
-//   fingerprint_seg_record_t *header_record = malloc( sizeof( fingerprint_seg_record_t));
-//   //name space entry
-//   namespace_record_t *item = (namespace_record_t*)malloc(sizeof(namespace_record_t));
-//   uint32_t i = 0;
-//   uint32_t seg_cnt = 1 ; //size/c_seg_size;
-//   while( seg_cnt != 0) {
-//     //compute fingerprint of $4KB
-//     compute_fingerprint(&recipe_entry->fingerprint, (uint8_t*)(buf + i*c_seg_size),
-//                         c_seg_size);
-//     recipe_entry->seg_num = offset/c_blk_size;
-//     //add entry to file recipe
-//     filerecipe_add_entry( recipe, recipe_entry);
-//
-//     //add fingerprint to container header
-//     //container_header_add_fingerprint(lfs_info->buf_container, header_record);
-//
-//     fingerprint_print(&recipe_entry->fingerprint);
-//
-//     namespace_record_t *result;
-//     HASH_FIND(hh, lfs_info->lfs_namespace, &recipe_entry->fingerprint,sizeof(fingerprint_t), result);
-//     if( result == NULL ) {
-//       printf("lfs_write: no duplicated seg\n");
-//       //header fingerprint entry;
-//       memset(header_record, 0, sizeof(fingerprint_seg_record_t) );
-//       memcpy(header_record->fp.fingerprint, recipe_entry->fingerprint.fingerprint, FINGERPRINT_SIZE);
-//       header_record->seg = lfs_info->buf_container->seg_offset;
-//       printf("lfs_write: fingerprint header seg_offset %u\n", header_record->seg);
-//       //add fingerprint to container header
-//       container_header_add_fingerprint(lfs_info->buf_container, header_record);
-//
-//       //fingerprint_print(&recipe_entry->fingerprint);
-//       //add fingerprint to namespace;
-//       memset( item, 0, sizeof(namespace_record_t) );
-//       memcpy( item->fp.fingerprint, recipe_entry->fingerprint.fingerprint, sizeof(fingerprint_t) );
-//       item->container_id = lfs_info->buf_container->header->container_id;
-//       HASH_ADD(hh, lfs_info->lfs_namespace, fp, sizeof(fingerprint_t), item);
-//       //add data to the block
-//       container_add_seg(lfs_info->buf_container, (char*)buf + i*c_seg_size);
-//     } else {
-//       printf("lfs_write: find seg in disk\n");
-//     }
-//
-//     seg_cnt--;
-//     i++;
-//
-//   }
-//
-//   print_filerecipe(recipe);
-//   printf(" lfs_write: file recipe entry cnt: %u\n", HASH_CNT(hh, lfs_info->lfs_namespace));
-//
-//   //add file recipe to mem
-//   inode.file_recipe = lfs_info->buf_container->header->container_id * c_container_size
-//                     + lfs_info->buf_container->seg_offset * c_blk_size + c_blk_size;
-//   printf("lfs_write: new file recipe is added to mem addr %x\n", inode.file_recipe);
-//   container_add_seg(lfs_info->buf_container, (char*)recipe);
-//
-//   //update inode map
-//   for (i = 0; i < MAX_INODE_NUM; i++) {
-//     if (lfs_info->imap->records[i].inode_id == inode.inode_id) {
-//       lfs_info->imap->records[i].inode_addr =
-//           lfs_info->buf_container->header->container_id * c_container_size
-//           + lfs_info->buf_container->seg_offset * c_seg_size + c_blk_size;
-//       printf("lfs_write: inode new addr is %x\n",
-//         lfs_info->imap->records[i].inode_addr);
-//           break;
-//     }
-//   }
-//   inode.file_size = size;
-//   container_add_seg(lfs_info->buf_container, (char*)&inode);
-//   print_inodemap(lfs_info->imap);
-//   free(recipe_entry);
-//   free(header_record);
-//   return size;
-// }
+
 //
 // static int lfs_rename(const char* old_path, const char* new_path) {
 //   printf("lfs_rename: enter\n");

@@ -1,5 +1,13 @@
 #include "file_recipe.h"
 
+int fr_ent_is_valid(fr_ent_t *entry) {
+    if (entry->flag & FILE_RECIPE_ENT_VALID == FILE_RECIPE_ENT_VALID) {
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
 int fr_add_ent(fr_t *filerecipe, fr_ent_t entry) {
     int size = filerecipe->size;
     if (size >= FILE_RECIPE_ENTS_PER_BLK && size < 0) {
@@ -56,6 +64,7 @@ int file_recipe_get_from_blk(uint8_t *blk, fr_t *recipe) {
     return size;
 }
 
+//buffer operations.
 int fr_write_buf(uint8_t *buf, int offset, fr_t *recipe) {
     int size = recipe->size;
     int i = 0;
@@ -82,15 +91,28 @@ int file_recipe_get_from_indirect_blk() {
 
 
 int fr_read_blk(uint8_t *blk, uint32_t blk_size, fr_t *recipe) {
-
+    int i = 0;
+    while (i < FILE_RECIPE_ENTS_PER_BLK) {
+        fr_ent_read_buf(blk, i * FILE_RECIPE_ENT_LEN, &recipe->entries[i]);
+        if (fr_ent_is_valid(&recipe->entries[i]) < 0) {
+            break;
+        } else {
+            ++i;
+        }
+    }
+    recipe->size = i;
+    return recipe->size;
 }
 int fr_write_blk(uint8_t *blk, uint32_t blk_size, fr_t *recipe) {
+    //set blk to 0s
+    memset(blk, 0, blk_size);
     int size = recipe->size;
     int i = 0;
     //TODO: blk_size edge case check.
     int nbytes = 0;
     for (; i < size; ++i) {
+        recipe->entries[i].flag |= FILE_RECIPE_ENT_VALID;
         nbytes = fr_ent_write_buf(blk, nbytes, &recipe->entries[i]);
     }
-    return nbytes;
+    return i;
 }

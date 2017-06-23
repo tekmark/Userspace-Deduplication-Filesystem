@@ -10,11 +10,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "fingerprint.h"
 #include "uthash.h" //hash table
-#include "util.h"
-#include "logger.h"
-
-
 /*
   namespace (fingerprint <-> contaienr_id table)
   format on disk.

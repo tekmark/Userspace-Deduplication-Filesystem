@@ -16,9 +16,10 @@
 //inode map entry format on disk.
 struct inodemap_r {
     uint32_t ino;
+    // uint32_t addr;                  //filesystem addr
     uint32_t cid;
     uint32_t blk_offset;
-    // uint32_t addr;
+    uint32_t flag;
 };
 typedef struct inodemap_r inodemap_r_t;
 

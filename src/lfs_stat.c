@@ -1,5 +1,7 @@
 #include "lfs_stat.h"
 
+#include "logger.h"
+
 // lfs_stat_t sys_stat;
 static lfs_stat_t stat;
 

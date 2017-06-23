@@ -8,14 +8,22 @@
 #include <string.h>
 #include <ctype.h>
 
-// #include "lfs_stat.h"
+#include "lfs_stat.h"
 #include "container_types.h"
 #include "fingerprint.h"
 #include "file_recipe.h"
 #include "logger.h"
 
+
 void util_test();
 void print_filerecipe(fr_t *filerecipe);
+
+//calculate address
+int calculate_blk_no(lfs_stat_t *stat, int cid, int blk_off);
+int calculate_container_id(lfs_stat_t *stat, int addr);
+int calculate_blk_offset(lfs_stat_t *stat, int addr);
+
+
 
 //helper functions for fingerprint.
 // fingerprint_t * fp_cpy(fingerprint_t *dest, fingerprint_t *src);

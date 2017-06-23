@@ -1,5 +1,17 @@
 #include "inodemap.h"
 #include "lfs_stat.h"
+#include "logger.h"
+
+static int imap_init_flag = 0;
+static inodemap_t inodemap;
+
+inodemap_t * get_inodemap() {
+    if (imap_init_flag == 0) {
+        inodemap.stat = (inodemap_stat_t*)malloc(sizeof(inodemap_stat_t));
+        imap_init_flag = 1;
+    }
+    return &inodemap;
+}
 
 inodemap_t * new_inodemap() {
     inodemap_t *inodemap = (inodemap_t*)malloc(sizeof(inodemap_t));
@@ -47,6 +59,7 @@ int inodemap_add_record(inodemap_r_t *r) {
     int size = stat->imap->stat->tbl_size;
     int offset = stat->imap->stat->tbl_offset + size * INODEMAP_ENTRY_LEN;
 
+    //write to disk.
     int bytes = pwrite(stat->fd, r_buf, INODEMAP_ENTRY_LEN, offset);
     if (bytes < 0) {
         return -1;
